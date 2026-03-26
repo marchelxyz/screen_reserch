@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { GerchikovStep2Data } from "@/lib/gerchikov/step2Types";
+import { isFullScreeningPayloadComplete } from "@/lib/validation/stepCompletion";
 import { generateSessionId } from "@/lib/sessionId";
 
 export type Step1Data = {
@@ -57,6 +58,8 @@ export type SubmitPayload = {
   step2Data: Step2Data;
   step3Data: Step3Data;
   step4Data: Step4Data;
+  /** Токен Cloudflare Turnstile (если включена капча на шаге 4). */
+  turnstileToken?: string;
 };
 
 type FormStore = {
@@ -73,6 +76,8 @@ type FormStore = {
 
   submissionStatus: SubmissionStatus;
   submitError: string | null;
+  /** Ответ виджета Turnstile (шаг 4). */
+  turnstileToken: string | null;
 
   setProfileName: (name: string) => void;
   setPersonalDataConsent: (consent: boolean) => void;
@@ -80,6 +85,10 @@ type FormStore = {
   setStep2Data: (data: Step2Data) => void;
   setStep3Data: (data: Step3Data) => void;
   setStep4Data: (data: Step4Data) => void;
+  setTurnstileToken: (token: string | null) => void;
+
+  /** Удаляет ответы анкеты из памяти и persisted state (после успешной отправки). */
+  clearSensitiveFormData: () => void;
 
   /** Новая сессия и сброс ответов — при нажатии «Продолжить» на intro. */
   beginTestSession: () => void;
@@ -176,6 +185,7 @@ export const useFormStore = create<FormStore>()(
 
       submissionStatus: "idle",
       submitError: null,
+      turnstileToken: null,
 
       setProfileName: (name) => set({ profileName: name }),
       setPersonalDataConsent: (consent) =>
@@ -187,6 +197,16 @@ export const useFormStore = create<FormStore>()(
       setStep2Data: (data) => set({ step2Data: data }),
       setStep3Data: (data) => set({ step3Data: data }),
       setStep4Data: (data) => set({ step4Data: data }),
+      setTurnstileToken: (token) => set({ turnstileToken: token }),
+
+      clearSensitiveFormData: () =>
+        set({
+          step1Data: { ...defaultStep1Data },
+          step2Data: { ...defaultStep2Data },
+          step3Data: { ...defaultStep3Data },
+          step4Data: { ...defaultStep4Data },
+          turnstileToken: null,
+        }),
 
       beginTestSession: () =>
         set({
@@ -194,6 +214,7 @@ export const useFormStore = create<FormStore>()(
           ...resetStepAnswers(),
           submissionStatus: "idle",
           submitError: null,
+          turnstileToken: null,
         }),
 
       closeSessionAfterSubmit: () => set({ sessionId: null }),
@@ -204,6 +225,7 @@ export const useFormStore = create<FormStore>()(
           ...resetStepAnswers(),
           submissionStatus: "idle",
           submitError: null,
+          turnstileToken: null,
         }),
 
       resetAfterTestFlow: () =>
@@ -212,6 +234,7 @@ export const useFormStore = create<FormStore>()(
           ...resetStepAnswers(),
           submissionStatus: "idle",
           submitError: null,
+          turnstileToken: null,
         }),
 
       submitData: async () => {
@@ -243,6 +266,33 @@ export const useFormStore = create<FormStore>()(
           return;
         }
 
+        if (
+          !isFullScreeningPayloadComplete(
+            state.step1Data,
+            state.step2Data,
+            state.step3Data,
+            state.step4Data
+          )
+        ) {
+          set({
+            submissionStatus: "error",
+            submitError: "Анкета заполнена не полностью.",
+          });
+          return;
+        }
+
+        const siteKey =
+          typeof process !== "undefined"
+            ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+            : undefined;
+        if (siteKey && siteKey.length > 0 && !state.turnstileToken) {
+          set({
+            submissionStatus: "error",
+            submitError: "Пройдите проверку «Я не робот» на шаге 4.",
+          });
+          return;
+        }
+
         set({ submissionStatus: "submitting", submitError: null });
 
         const payload: SubmitPayload = {
@@ -254,6 +304,9 @@ export const useFormStore = create<FormStore>()(
           step2Data: state.step2Data,
           step3Data: state.step3Data,
           step4Data: state.step4Data,
+          ...(state.turnstileToken
+            ? { turnstileToken: state.turnstileToken }
+            : {}),
         };
 
         try {
@@ -264,14 +317,24 @@ export const useFormStore = create<FormStore>()(
           });
 
           if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            let message = `Ошибка ${String(response.status)}`;
+            try {
+              const body = (await response.json()) as { error?: string };
+              if (body.error) {
+                message = body.error;
+              }
+            } catch {
+              /* игнорируем невалидный JSON */
+            }
+            throw new Error(message);
           }
 
           set({ submissionStatus: "submitted" });
+          get().clearSensitiveFormData();
           get().closeSessionAfterSubmit();
         } catch (error) {
           const message =
-            error instanceof Error ? error.message : "Unknown error";
+            error instanceof Error ? error.message : "Неизвестная ошибка";
           set({ submissionStatus: "error", submitError: message });
         }
       },
@@ -289,6 +352,7 @@ export const useFormStore = create<FormStore>()(
         step4Data: state.step4Data,
         submissionStatus: state.submissionStatus,
         submitError: state.submitError,
+        turnstileToken: state.turnstileToken,
       }),
       skipHydration: true,
     }

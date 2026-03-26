@@ -43,6 +43,7 @@ import {
   stepSecondaryTextClass,
 } from "@/lib/stepPageTheme";
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
+import { setScreeningMaxStepCookie } from "@/lib/screeningProgressCookie";
 import { getContinueButtonLabel } from "@/lib/testMotivation";
 import { Step1Data, Step2Data, useFormStore } from "@/store/useFormStore";
 
@@ -313,6 +314,10 @@ export default function Step2Page(): React.ReactElement {
     }
   }, [consentRecordedAt, personalDataConsent, profileName, router, sessionId, step1Data]);
 
+  useEffect(() => {
+    setScreeningMaxStepCookie(2);
+  }, []);
+
   const complete = isGerchikovStep2Complete(step2Data);
   const answeredCount = getAllAnsweredCount(step1Data, step2Data, step3Data, step4Data);
   const continueLabel = getContinueButtonLabel(answeredCount);
@@ -469,7 +474,10 @@ export default function Step2Page(): React.ReactElement {
 
           <Button
             disabled={!complete}
-            onClick={() => router.push("/step-3")}
+            onClick={() => {
+              setScreeningMaxStepCookie(3);
+              router.push("/step-3");
+            }}
             className={stepNavPrimaryButtonClass}
           >
             {continueLabel}
