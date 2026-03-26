@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { generateSessionId } from "@/lib/sessionId";
 
 export type Step1Data = {
   q1: string | null;
@@ -54,6 +55,7 @@ export type Step4Data = {
 export type SubmissionStatus = "idle" | "submitting" | "submitted" | "error";
 
 export type SubmitPayload = {
+  sessionId: string;
   profileName: string;
   personalDataConsent: boolean;
   step1Data: Step1Data;
@@ -63,6 +65,8 @@ export type SubmitPayload = {
 };
 
 type FormStore = {
+  /** Активная сессия прохождения теста; создаётся при переходе с intro на шаг 1. */
+  sessionId: string | null;
   profileName: string;
   personalDataConsent: boolean;
   step1Data: Step1Data;
@@ -79,6 +83,15 @@ type FormStore = {
   setStep2Data: (data: Step2Data) => void;
   setStep3Data: (data: Step3Data) => void;
   setStep4Data: (data: Step4Data) => void;
+
+  /** Новая сессия и сброс ответов — при нажатии «Продолжить» на intro. */
+  beginTestSession: () => void;
+  /** Завершить сессию на клиенте после успешной отправки (ответы остаются для экрана «Спасибо»). */
+  closeSessionAfterSubmit: () => void;
+  /** Выход из теста: сброс сессии и ответов; имя и согласие сохраняются. */
+  leaveTestSession: () => void;
+  /** Полный сброс после завершения (кнопка «На главную»). */
+  resetAfterTestFlow: () => void;
 
   submitData: () => Promise<void>;
 };
@@ -124,9 +137,22 @@ const defaultStep4Data: Step4Data = {
   favoriteFilm: "",
 };
 
+function resetStepAnswers(): Pick<
+  FormStore,
+  "step1Data" | "step2Data" | "step3Data" | "step4Data"
+> {
+  return {
+    step1Data: { ...defaultStep1Data },
+    step2Data: { ...defaultStep2Data },
+    step3Data: { ...defaultStep3Data },
+    step4Data: { ...defaultStep4Data },
+  };
+}
+
 export const useFormStore = create<FormStore>()(
   persist(
     (set, get) => ({
+      sessionId: null,
       profileName: "",
       personalDataConsent: false,
       step1Data: defaultStep1Data,
@@ -144,6 +170,32 @@ export const useFormStore = create<FormStore>()(
       setStep3Data: (data) => set({ step3Data: data }),
       setStep4Data: (data) => set({ step4Data: data }),
 
+      beginTestSession: () =>
+        set({
+          sessionId: generateSessionId(),
+          ...resetStepAnswers(),
+          submissionStatus: "idle",
+          submitError: null,
+        }),
+
+      closeSessionAfterSubmit: () => set({ sessionId: null }),
+
+      leaveTestSession: () =>
+        set({
+          sessionId: null,
+          ...resetStepAnswers(),
+          submissionStatus: "idle",
+          submitError: null,
+        }),
+
+      resetAfterTestFlow: () =>
+        set({
+          sessionId: null,
+          ...resetStepAnswers(),
+          submissionStatus: "idle",
+          submitError: null,
+        }),
+
       submitData: async () => {
         const state = get();
         if (
@@ -153,9 +205,18 @@ export const useFormStore = create<FormStore>()(
           return;
         }
 
+        if (!state.sessionId) {
+          set({
+            submissionStatus: "error",
+            submitError: "Сессия не найдена. Начните тест с экрана ввода имени.",
+          });
+          return;
+        }
+
         set({ submissionStatus: "submitting", submitError: null });
 
         const payload: SubmitPayload = {
+          sessionId: state.sessionId,
           profileName: state.profileName,
           personalDataConsent: state.personalDataConsent,
           step1Data: state.step1Data,
@@ -175,8 +236,8 @@ export const useFormStore = create<FormStore>()(
             throw new Error(`HTTP ${response.status}`);
           }
 
-          // TODO: обработка результата (например, id кандидата).
           set({ submissionStatus: "submitted" });
+          get().closeSessionAfterSubmit();
         } catch (error) {
           const message =
             error instanceof Error ? error.message : "Unknown error";
@@ -187,12 +248,15 @@ export const useFormStore = create<FormStore>()(
     {
       name: "profile-uspese-form",
       partialize: (state) => ({
+        sessionId: state.sessionId,
         profileName: state.profileName,
         personalDataConsent: state.personalDataConsent,
         step1Data: state.step1Data,
         step2Data: state.step2Data,
         step3Data: state.step3Data,
         step4Data: state.step4Data,
+        submissionStatus: state.submissionStatus,
+        submitError: state.submitError,
       }),
       skipHydration: true,
     }

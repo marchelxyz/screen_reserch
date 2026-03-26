@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { ProgressBar } from "@/components/ProgressBar";
 import { QuestionCard } from "@/components/QuestionCard";
+import { SessionHint } from "@/components/SessionHint";
 import { StepLayout } from "@/components/StepLayout";
 import {
   stepNavPrimaryButtonClass,
@@ -34,6 +35,8 @@ export default function Step1Page(): React.ReactElement {
   const router = useRouter();
   const profileName = useFormStore((s) => s.profileName);
   const personalDataConsent = useFormStore((s) => s.personalDataConsent);
+  const sessionId = useFormStore((s) => s.sessionId);
+  const leaveTestSession = useFormStore((s) => s.leaveTestSession);
   const step1Data = useFormStore((s) => s.step1Data);
   const step2Data = useFormStore((s) => s.step2Data);
   const step3Data = useFormStore((s) => s.step3Data);
@@ -43,8 +46,12 @@ export default function Step1Page(): React.ReactElement {
   useEffect(() => {
     if (!isProfileReady(profileName, personalDataConsent)) {
       router.replace("/intro");
+      return;
     }
-  }, [personalDataConsent, profileName, router]);
+    if (!sessionId) {
+      router.replace("/intro");
+    }
+  }, [personalDataConsent, profileName, router, sessionId]);
 
   const questions: Step1Question[] = [
     {
@@ -102,10 +109,13 @@ export default function Step1Page(): React.ReactElement {
   }
 
   return (
-    <StepLayout>
+    <StepLayout showExitTest>
       <div className={stepPageContentClass}>
         <div className="mb-5">
           <ProgressBar answeredQuestions={answeredCount} totalQuestions={TOTAL_QUESTIONS_COUNT} />
+          <div className="mt-2">
+            <SessionHint sessionId={sessionId} />
+          </div>
         </div>
 
         <h1 className={stepSectionTitleClass}>
@@ -147,7 +157,10 @@ export default function Step1Page(): React.ReactElement {
         <div className="mt-7 flex flex-wrap items-center justify-between gap-3">
           <Button
             variant="secondary"
-            onClick={() => router.push("/")}
+            onClick={() => {
+              leaveTestSession();
+              router.push("/");
+            }}
             className="w-[160px]"
           >
             Назад

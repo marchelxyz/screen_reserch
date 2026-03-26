@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { ProgressBar } from "@/components/ProgressBar";
 import { QuestionCard } from "@/components/QuestionCard";
+import { SessionHint } from "@/components/SessionHint";
 import { StepLayout } from "@/components/StepLayout";
 import {
   stepNavPrimaryButtonClass,
@@ -37,6 +38,7 @@ export default function Step2Page(): React.ReactElement {
   const router = useRouter();
   const profileName = useFormStore((s) => s.profileName);
   const personalDataConsent = useFormStore((s) => s.personalDataConsent);
+  const sessionId = useFormStore((s) => s.sessionId);
   const step1Data = useFormStore((s) => s.step1Data);
   const step2Data = useFormStore((s) => s.step2Data);
   const step3Data = useFormStore((s) => s.step3Data);
@@ -48,10 +50,14 @@ export default function Step2Page(): React.ReactElement {
       router.replace("/intro");
       return;
     }
+    if (!sessionId) {
+      router.replace("/intro");
+      return;
+    }
     if (!isStep1Complete(step1Data)) {
       router.replace("/step-1");
     }
-  }, [personalDataConsent, profileName, router, step1Data]);
+  }, [personalDataConsent, profileName, router, sessionId, step1Data]);
 
   const complete = isStep2Complete(step2Data);
   const answeredCount = getAllAnsweredCount(step1Data, step2Data, step3Data, step4Data);
@@ -72,10 +78,13 @@ export default function Step2Page(): React.ReactElement {
   }
 
   return (
-    <StepLayout>
+    <StepLayout showExitTest>
       <div className={stepPageContentClass}>
         <div className="mb-5">
           <ProgressBar answeredQuestions={answeredCount} totalQuestions={TOTAL_QUESTIONS_COUNT} />
+          <div className="mt-2">
+            <SessionHint sessionId={sessionId} />
+          </div>
         </div>
 
         <h1 className={stepSectionTitleClass}>
