@@ -1,0 +1,24 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model ScreeningSubmission {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  step1Data Json @map("step1_data")
+  step2Data Json @map("step2_data")
+  step3Data Json @map("step3_data")
+  step4Data Json @map("step4_data")
+
+  @@map("screening_submission")
+}
+
