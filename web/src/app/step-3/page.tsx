@@ -13,6 +13,7 @@ import {
 } from "@/lib/stepPageTheme";
 import { isGerchikovStep2Complete } from "@/lib/gerchikov/validation";
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
+import { setScreeningMaxStepCookie } from "@/lib/screeningProgressCookie";
 import { getContinueButtonLabel } from "@/lib/testMotivation";
 import { LikertAnswer, Step3Data, useFormStore } from "@/store/useFormStore";
 
@@ -66,6 +67,10 @@ export default function Step3Page(): React.ReactElement {
       router.replace("/step-2");
     }
   }, [consentRecordedAt, personalDataConsent, profileName, router, sessionId, step2Data]);
+
+  useEffect(() => {
+    setScreeningMaxStepCookie(3);
+  }, []);
 
   const complete = isStep3Complete(step3Data);
   const answeredCount = getAllAnsweredCount(step1Data, step2Data, step3Data, step4Data);
@@ -145,7 +150,10 @@ export default function Step3Page(): React.ReactElement {
 
           <Button
             disabled={!complete}
-            onClick={() => router.push("/step-4")}
+            onClick={() => {
+              setScreeningMaxStepCookie(4);
+              router.push("/step-4");
+            }}
             className={stepNavPrimaryButtonClass}
           >
             {continueLabel}

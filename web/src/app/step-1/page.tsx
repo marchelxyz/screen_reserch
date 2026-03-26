@@ -12,6 +12,7 @@ import {
   stepPageContentClass,
 } from "@/lib/stepPageTheme";
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
+import { setScreeningMaxStepCookie } from "@/lib/screeningProgressCookie";
 import { getContinueButtonLabel } from "@/lib/testMotivation";
 import { Step1Data, useFormStore } from "@/store/useFormStore";
 
@@ -51,6 +52,10 @@ export default function Step1Page(): React.ReactElement {
       router.replace("/briefing");
     }
   }, [consentRecordedAt, personalDataConsent, profileName, router, sessionId]);
+
+  useEffect(() => {
+    setScreeningMaxStepCookie(1);
+  }, []);
 
   const questions: Step1Question[] = [
     {
@@ -158,7 +163,10 @@ export default function Step1Page(): React.ReactElement {
 
           <Button
             disabled={!complete}
-            onClick={() => router.push("/step-2")}
+            onClick={() => {
+              setScreeningMaxStepCookie(2);
+              router.push("/step-2");
+            }}
             className={stepNavPrimaryButtonClass}
           >
             {continueLabel}

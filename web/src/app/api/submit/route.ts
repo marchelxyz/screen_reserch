@@ -1,77 +1,90 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getClientIp } from "@/lib/api/clientIp";
+import {
+  isSubmitRateLimitExceeded,
+  recordSuccessfulSubmit,
+} from "@/lib/api/submitRateLimit";
+import { verifyTurnstileToken } from "@/lib/api/verifyTurnstile";
 import { prisma } from "@/lib/prisma";
+import { isFullScreeningPayloadComplete } from "@/lib/validation/stepCompletion";
+import { submitApiBodySchema } from "@/lib/validation/submitPayloadSchema";
 import { Prisma } from "@/generated/prisma/client";
 
-type SubmitPayload = {
-  sessionId?: unknown;
-  profileName?: unknown;
-  personalDataConsent?: unknown;
-  consentRecordedAt?: unknown;
-  step1Data: unknown;
-  step2Data: unknown;
-  step3Data: unknown;
-  step4Data: unknown;
-};
+export const dynamic = "force-dynamic";
 
-function parseConsentRecordedAt(value: unknown): Date | null {
-  if (typeof value !== "string" || value.trim().length === 0) {
-    return null;
-  }
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
+function jsonError(message: string, status: number): NextResponse<{ error: string }> {
+  return NextResponse.json({ error: message }, { status });
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
+function methodNotAllowed(): NextResponse<{ error: string }> {
+  return NextResponse.json({ error: "Method Not Allowed" }, { status: 405 });
+}
+
+export function GET(): NextResponse<{ error: string }> {
+  return methodNotAllowed();
+}
+
+export function PUT(): NextResponse<{ error: string }> {
+  return methodNotAllowed();
+}
+
+export function DELETE(): NextResponse<{ error: string }> {
+  return methodNotAllowed();
+}
+
+export function PATCH(): NextResponse<{ error: string }> {
+  return methodNotAllowed();
 }
 
 /**
- * Принимает ответы кандидата и сохраняет по уникальному session_id (идемпотентное обновление при повторе).
+ * Принимает ответы кандидата и сохраняет по session_id (upsert).
+ * Не логирует тело запроса и не отдаёт клиенту внутренние тексты ошибок.
  */
 export async function POST(
   req: NextRequest
 ): Promise<NextResponse<{ ok: true } | { error: string }>> {
-  const payload = (await req.json()) as SubmitPayload;
-
-  if (
-    typeof payload.sessionId !== "string" ||
-    payload.sessionId.trim().length === 0
-  ) {
-    return NextResponse.json(
-      { error: "sessionId is required" },
-      { status: 400 }
-    );
+  let jsonBody: unknown;
+  try {
+    jsonBody = await req.json();
+  } catch {
+    return jsonError("Invalid JSON", 400);
   }
 
-  if (typeof payload.profileName !== "string") {
-    return NextResponse.json({ error: "profileName is required" }, { status: 400 });
+  const parsed = submitApiBodySchema.safeParse(jsonBody);
+  if (!parsed.success) {
+    return jsonError("Invalid request body", 400);
   }
 
-  if (typeof payload.personalDataConsent !== "boolean") {
-    return NextResponse.json(
-      { error: "personalDataConsent is required" },
-      { status: 400 }
-    );
-  }
+  const payload = parsed.data;
 
-  const consentAt = parseConsentRecordedAt(payload.consentRecordedAt);
-  if (!consentAt) {
-    return NextResponse.json(
-      { error: "consentRecordedAt must be a valid ISO date string" },
-      { status: 400 }
-    );
+  if (!payload.personalDataConsent) {
+    return jsonError("Invalid request body", 400);
   }
 
   if (
-    !isRecord(payload.step1Data) ||
-    !isRecord(payload.step2Data) ||
-    !isRecord(payload.step3Data) ||
-    !isRecord(payload.step4Data)
+    !isFullScreeningPayloadComplete(
+      payload.step1Data,
+      payload.step2Data,
+      payload.step3Data,
+      payload.step4Data
+    )
   ) {
-    return NextResponse.json({ error: "Invalid step payloads" }, { status: 400 });
+    return jsonError("Incomplete payload", 400);
+  }
+
+  const clientIp = getClientIp(req);
+
+  if (isSubmitRateLimitExceeded(clientIp)) {
+    return jsonError("Too Many Requests", 429);
+  }
+
+  const turnstileOk = await verifyTurnstileToken(payload.turnstileToken);
+  if (!turnstileOk) {
+    return jsonError("Invalid captcha", 400);
   }
 
   try {
+    const consentAt = new Date(payload.consentRecordedAt);
     await prisma.screeningSubmission.upsert({
       where: { sessionId: payload.sessionId },
       create: {
@@ -94,12 +107,10 @@ export async function POST(
         step4Data: payload.step4Data as Prisma.InputJsonValue,
       },
     });
+    recordSuccessfulSubmit(clientIp);
   } catch {
-    // Если база недоступна на ранних этапах разработки - всё равно возвращаем 200.
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
-
-  // TODO: Отправка данных в OpenAI API для анализа
-  // TODO: Генерация PDF-отчета
 
   return NextResponse.json({ ok: true }, { status: 200 });
 }
