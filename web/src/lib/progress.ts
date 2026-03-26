@@ -1,6 +1,8 @@
+import { getGerchikovStep2AnsweredCount } from "@/lib/gerchikov/validation";
 import { Step1Data, Step2Data, Step3Data, Step4Data } from "@/store/useFormStore";
 
-export const TOTAL_QUESTIONS_COUNT = 29;
+/** 5 (шаг 1) + 23 (Герчиков) + 10 (шаг 3) + 6 (шаг 4). */
+export const TOTAL_QUESTIONS_COUNT = 44;
 
 export function getStep1AnsweredCount(data: Step1Data): number {
   const values = [data.q1, data.q2, data.q3, data.q4, data.q5];
@@ -8,8 +10,7 @@ export function getStep1AnsweredCount(data: Step1Data): number {
 }
 
 export function getStep2AnsweredCount(data: Step2Data): number {
-  const values = [data.s1, data.s2, data.s3, data.s4, data.s5, data.s6, data.s7, data.s8];
-  return values.filter((value) => value !== null).length;
+  return getGerchikovStep2AnsweredCount(data);
 }
 
 export function getStep3AnsweredCount(data: Step3Data): number {
