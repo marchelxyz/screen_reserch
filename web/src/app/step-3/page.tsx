@@ -11,14 +11,10 @@ import {
   stepNavPrimaryButtonClass,
   stepPageContentClass,
 } from "@/lib/stepPageTheme";
+import { isGerchikovStep2Complete } from "@/lib/gerchikov/validation";
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
 import { getContinueButtonLabel } from "@/lib/testMotivation";
-import {
-  LikertAnswer,
-  Step2Data,
-  Step3Data,
-  useFormStore,
-} from "@/store/useFormStore";
+import { LikertAnswer, Step3Data, useFormStore } from "@/store/useFormStore";
 
 type Step3Question = {
   id: keyof Step3Data;
@@ -29,12 +25,6 @@ type LikertOption = {
   value: LikertAnswer;
   label: string;
 };
-
-function isStep2Complete(data: Step2Data): boolean {
-  return [data.s1, data.s2, data.s3, data.s4, data.s5, data.s6, data.s7, data.s8].every(
-    (item) => item !== null
-  );
-}
 
 function isStep3Complete(data: Step3Data): boolean {
   return Boolean(
@@ -72,7 +62,7 @@ export default function Step3Page(): React.ReactElement {
       router.replace("/briefing");
       return;
     }
-    if (!isStep2Complete(step2Data)) {
+    if (!isGerchikovStep2Complete(step2Data)) {
       router.replace("/step-2");
     }
   }, [consentRecordedAt, personalDataConsent, profileName, router, sessionId, step2Data]);

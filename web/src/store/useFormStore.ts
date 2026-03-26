@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { GerchikovStep2Data } from "@/lib/gerchikov/step2Types";
 import { generateSessionId } from "@/lib/sessionId";
 
 export type Step1Data = {
@@ -12,16 +13,8 @@ export type Step1Data = {
   q5: string | null;
 };
 
-export type Step2Data = {
-  s1: boolean | null;
-  s2: boolean | null;
-  s3: boolean | null;
-  s4: boolean | null;
-  s5: boolean | null;
-  s6: boolean | null;
-  s7: boolean | null;
-  s8: boolean | null;
-};
+/** Опросник мотивации (методика Герчикова), шаг 2. */
+export type Step2Data = GerchikovStep2Data;
 
 export type LikertAnswer =
   | "fully_agree"
@@ -109,14 +102,30 @@ const defaultStep1Data: Step1Data = {
 };
 
 const defaultStep2Data: Step2Data = {
-  s1: null,
-  s2: null,
-  s3: null,
-  s4: null,
-  s5: null,
-  s6: null,
-  s7: null,
-  s8: null,
+  q1: [],
+  q2: null,
+  q3: [],
+  q4: [],
+  q5: [],
+  q6: null,
+  q7: null,
+  q8: null,
+  q9: null,
+  q10: null,
+  q11: null,
+  q12: null,
+  q13: null,
+  q14: null,
+  q15: null,
+  q16: [],
+  q17: [],
+  q18: [],
+  q19: [],
+  q20: [],
+  q21: [],
+  isLeader: null,
+  q22: [],
+  q23: [],
 };
 
 const defaultStep3Data: Step3Data = {
@@ -268,7 +277,7 @@ export const useFormStore = create<FormStore>()(
       },
     }),
     {
-      name: "profile-uspese-form",
+      name: "profile-uspese-form-v4-gerchikov",
       partialize: (state) => ({
         sessionId: state.sessionId,
         profileName: state.profileName,
