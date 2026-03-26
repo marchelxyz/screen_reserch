@@ -10,9 +10,9 @@ export default function WelcomePage(): React.ReactElement {
 
   return (
     <StepLayout>
-      <div className="flex flex-1 items-center justify-center px-4 pb-6">
-        <div className="w-full max-w-[1037px] rounded-[41px] bg-[#DDDDDD] shadow-[0px_4px_75px_0px_rgba(0,0,0,0.20)] px-[60px] py-[32px]">
-          <div className="text-[#5F5E5E] text-[26px] font-extrabold leading-[normal]">
+      <div className="flex flex-1 items-center justify-center px-4">
+        <div className="w-full max-w-[860px] rounded-[34px] bg-[#DDDDDD] shadow-[0px_4px_75px_0px_rgba(0,0,0,0.20)] px-[48px] py-[24px]">
+          <div className="text-[#5F5E5E] text-[20px] font-extrabold leading-[1.4]">
             <p>
               Мы ценим ваше время и хотим, чтобы наше дальнейшее общение
               было максимально предметным и полезным для обеих сторон.
@@ -22,7 +22,7 @@ export default function WelcomePage(): React.ReactElement {
               Просим вас уделить около 30 минут на этот интерактивный опрос.{" "}
               Он состоит из 4 коротких шагов, которые помогут нам:
             </p>
-            <ul className="list-disc pl-[39px]">
+            <ul className="list-disc pl-[32px]">
               <li>Оценить ваш подход к решению нестандартных задач.</li>
               <li>Понять, что вас по-настоящему мотивирует и драйвит.</li>
               <li>
@@ -38,10 +38,10 @@ export default function WelcomePage(): React.ReactElement {
             </p>
           </div>
 
-          <div className="mt-[28px] flex justify-center">
+          <div className="mt-[20px] flex justify-center">
             <Button
               onClick={() => router.push("/intro")}
-              className="h-[71px] w-[344px] text-[28px] font-extrabold leading-none"
+              className="h-[56px] px-[36px] whitespace-nowrap text-[22px] font-extrabold leading-none"
             >
               НАЧАТЬ ЗНАКОМСТВО
             </Button>
