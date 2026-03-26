@@ -6,11 +6,20 @@ type SubmitPayload = {
   sessionId?: unknown;
   profileName?: unknown;
   personalDataConsent?: unknown;
+  consentRecordedAt?: unknown;
   step1Data: unknown;
   step2Data: unknown;
   step3Data: unknown;
   step4Data: unknown;
 };
+
+function parseConsentRecordedAt(value: unknown): Date | null {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return null;
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -45,6 +54,14 @@ export async function POST(
     );
   }
 
+  const consentAt = parseConsentRecordedAt(payload.consentRecordedAt);
+  if (!consentAt) {
+    return NextResponse.json(
+      { error: "consentRecordedAt must be a valid ISO date string" },
+      { status: 400 }
+    );
+  }
+
   if (
     !isRecord(payload.step1Data) ||
     !isRecord(payload.step2Data) ||
@@ -61,6 +78,7 @@ export async function POST(
         sessionId: payload.sessionId,
         profileName: payload.profileName,
         personalDataConsent: payload.personalDataConsent,
+        consentRecordedAt: consentAt,
         step1Data: payload.step1Data as Prisma.InputJsonValue,
         step2Data: payload.step2Data as Prisma.InputJsonValue,
         step3Data: payload.step3Data as Prisma.InputJsonValue,
@@ -69,6 +87,7 @@ export async function POST(
       update: {
         profileName: payload.profileName,
         personalDataConsent: payload.personalDataConsent,
+        consentRecordedAt: consentAt,
         step1Data: payload.step1Data as Prisma.InputJsonValue,
         step2Data: payload.step2Data as Prisma.InputJsonValue,
         step3Data: payload.step3Data as Prisma.InputJsonValue,

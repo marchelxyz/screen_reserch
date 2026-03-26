@@ -42,6 +42,7 @@ export default function FinishPage(): React.ReactElement {
   const router = useRouter();
   const profileName = useFormStore((s) => s.profileName);
   const personalDataConsent = useFormStore((s) => s.personalDataConsent);
+  const consentRecordedAt = useFormStore((s) => s.consentRecordedAt);
   const step1Data = useFormStore((s) => s.step1Data);
   const step2Data = useFormStore((s) => s.step2Data);
   const step3Data = useFormStore((s) => s.step3Data);
@@ -53,14 +54,14 @@ export default function FinishPage(): React.ReactElement {
   const answeredCount = getAllAnsweredCount(step1Data, step2Data, step3Data, step4Data);
 
   useEffect(() => {
-    if (!isProfileReady(profileName, personalDataConsent)) {
+    if (!isProfileReady(profileName, personalDataConsent, consentRecordedAt)) {
       router.replace("/intro");
       return;
     }
     if (!isStep4Complete(step4Data) && submissionStatus !== "submitted") {
       router.replace("/step-4");
     }
-  }, [personalDataConsent, profileName, router, step4Data, submissionStatus]);
+  }, [consentRecordedAt, personalDataConsent, profileName, router, step4Data, submissionStatus]);
 
   useEffect(() => {
     if (submissionStatus === "idle") {

@@ -58,6 +58,8 @@ export type SubmitPayload = {
   sessionId: string;
   profileName: string;
   personalDataConsent: boolean;
+  /** ISO 8601 (UTC), момент установки галочки согласия на intro. */
+  consentRecordedAt: string;
   step1Data: Step1Data;
   step2Data: Step2Data;
   step3Data: Step3Data;
@@ -69,6 +71,8 @@ type FormStore = {
   sessionId: string | null;
   profileName: string;
   personalDataConsent: boolean;
+  /** ISO 8601 (UTC), выставляется при personalDataConsent === true, сбрасывается при снятии галочки. */
+  consentRecordedAt: string | null;
   step1Data: Step1Data;
   step2Data: Step2Data;
   step3Data: Step3Data;
@@ -155,6 +159,7 @@ export const useFormStore = create<FormStore>()(
       sessionId: null,
       profileName: "",
       personalDataConsent: false,
+      consentRecordedAt: null,
       step1Data: defaultStep1Data,
       step2Data: defaultStep2Data,
       step3Data: defaultStep3Data,
@@ -164,7 +169,11 @@ export const useFormStore = create<FormStore>()(
       submitError: null,
 
       setProfileName: (name) => set({ profileName: name }),
-      setPersonalDataConsent: (consent) => set({ personalDataConsent: consent }),
+      setPersonalDataConsent: (consent) =>
+        set({
+          personalDataConsent: consent,
+          consentRecordedAt: consent ? new Date().toISOString() : null,
+        }),
       setStep1Data: (data) => set({ step1Data: data }),
       setStep2Data: (data) => set({ step2Data: data }),
       setStep3Data: (data) => set({ step3Data: data }),
@@ -213,12 +222,25 @@ export const useFormStore = create<FormStore>()(
           return;
         }
 
+        if (
+          !state.consentRecordedAt ||
+          state.consentRecordedAt.trim().length === 0
+        ) {
+          set({
+            submissionStatus: "error",
+            submitError:
+              "Не зафиксировано согласие с политикой. Вернитесь на экран ввода имени и примите политику.",
+          });
+          return;
+        }
+
         set({ submissionStatus: "submitting", submitError: null });
 
         const payload: SubmitPayload = {
           sessionId: state.sessionId,
           profileName: state.profileName,
           personalDataConsent: state.personalDataConsent,
+          consentRecordedAt: state.consentRecordedAt,
           step1Data: state.step1Data,
           step2Data: state.step2Data,
           step3Data: state.step3Data,
@@ -251,6 +273,7 @@ export const useFormStore = create<FormStore>()(
         sessionId: state.sessionId,
         profileName: state.profileName,
         personalDataConsent: state.personalDataConsent,
+        consentRecordedAt: state.consentRecordedAt,
         step1Data: state.step1Data,
         step2Data: state.step2Data,
         step3Data: state.step3Data,

@@ -55,6 +55,7 @@ export default function Step3Page(): React.ReactElement {
   const router = useRouter();
   const profileName = useFormStore((s) => s.profileName);
   const personalDataConsent = useFormStore((s) => s.personalDataConsent);
+  const consentRecordedAt = useFormStore((s) => s.consentRecordedAt);
   const sessionId = useFormStore((s) => s.sessionId);
   const step1Data = useFormStore((s) => s.step1Data);
   const step2Data = useFormStore((s) => s.step2Data);
@@ -63,7 +64,7 @@ export default function Step3Page(): React.ReactElement {
   const setStep3Data = useFormStore((s) => s.setStep3Data);
 
   useEffect(() => {
-    if (!isProfileReady(profileName, personalDataConsent)) {
+    if (!isProfileReady(profileName, personalDataConsent, consentRecordedAt)) {
       router.replace("/intro");
       return;
     }
@@ -74,7 +75,7 @@ export default function Step3Page(): React.ReactElement {
     if (!isStep2Complete(step2Data)) {
       router.replace("/step-2");
     }
-  }, [personalDataConsent, profileName, router, sessionId, step2Data]);
+  }, [consentRecordedAt, personalDataConsent, profileName, router, sessionId, step2Data]);
 
   const complete = isStep3Complete(step3Data);
   const answeredCount = getAllAnsweredCount(step1Data, step2Data, step3Data, step4Data);

@@ -17,6 +17,8 @@ model ScreeningSubmission {
   sessionId String @unique @map("session_id")
   profileName String @map("profile_name")
   personalDataConsent Boolean @map("personal_data_consent")
+  /** Момент фиксации согласия с политикой (на клиенте при установке галочки), UTC. */
+  consentRecordedAt DateTime @map("consent_recorded_at")
 
   step1Data Json @map("step1_data")
   step2Data Json @map("step2_data")

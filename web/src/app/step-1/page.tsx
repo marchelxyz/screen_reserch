@@ -35,6 +35,7 @@ export default function Step1Page(): React.ReactElement {
   const router = useRouter();
   const profileName = useFormStore((s) => s.profileName);
   const personalDataConsent = useFormStore((s) => s.personalDataConsent);
+  const consentRecordedAt = useFormStore((s) => s.consentRecordedAt);
   const sessionId = useFormStore((s) => s.sessionId);
   const leaveTestSession = useFormStore((s) => s.leaveTestSession);
   const step1Data = useFormStore((s) => s.step1Data);
@@ -44,14 +45,14 @@ export default function Step1Page(): React.ReactElement {
   const setStep1Data = useFormStore((s) => s.setStep1Data);
 
   useEffect(() => {
-    if (!isProfileReady(profileName, personalDataConsent)) {
+    if (!isProfileReady(profileName, personalDataConsent, consentRecordedAt)) {
       router.replace("/intro");
       return;
     }
     if (!sessionId) {
       router.replace("/intro");
     }
-  }, [personalDataConsent, profileName, router, sessionId]);
+  }, [consentRecordedAt, personalDataConsent, profileName, router, sessionId]);
 
   const questions: Step1Question[] = [
     {
