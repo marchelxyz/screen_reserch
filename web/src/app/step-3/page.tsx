@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { ProgressBar } from "@/components/ProgressBar";
 import { QuestionCard } from "@/components/QuestionCard";
-import { SessionHint } from "@/components/SessionHint";
 import { StepLayout } from "@/components/StepLayout";
+import { TestMotivation } from "@/components/TestMotivation";
 import {
   stepNavPrimaryButtonClass,
   stepPageContentClass,
-  stepSectionTitleClass,
 } from "@/lib/stepPageTheme";
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
+import { getContinueButtonLabel } from "@/lib/testMotivation";
 import {
   LikertAnswer,
   Step2Data,
@@ -69,7 +69,7 @@ export default function Step3Page(): React.ReactElement {
       return;
     }
     if (!sessionId) {
-      router.replace("/intro");
+      router.replace("/briefing");
       return;
     }
     if (!isStep2Complete(step2Data)) {
@@ -79,6 +79,7 @@ export default function Step3Page(): React.ReactElement {
 
   const complete = isStep3Complete(step3Data);
   const answeredCount = getAllAnsweredCount(step1Data, step2Data, step3Data, step4Data);
+  const continueLabel = getContinueButtonLabel(answeredCount);
 
   const likertOptions: LikertOption[] = [
     { value: "fully_agree", label: "Полностью согласен" },
@@ -106,24 +107,17 @@ export default function Step3Page(): React.ReactElement {
   }
 
   return (
-    <StepLayout showExitTest>
+    <StepLayout>
       <div className={stepPageContentClass}>
-        <div className="mb-5">
+        <div className="mb-2">
           <ProgressBar answeredQuestions={answeredCount} totalQuestions={TOTAL_QUESTIONS_COUNT} />
-          <div className="mt-2">
-            <SessionHint sessionId={sessionId} />
-          </div>
+          <TestMotivation profileName={profileName} answeredCount={answeredCount} />
         </div>
-
-        <h1 className={stepSectionTitleClass}>
-          {profileName.trim().length > 0 ? `${profileName}, ` : ""}
-          Эмоциональный статус
-        </h1>
 
         <div className="space-y-4">
           {questions.map((q) => (
             <QuestionCard key={q.id} title={q.title}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {likertOptions.map((opt) => {
                   const inputId = `step3-${q.id}-${opt.value}`;
                   const checked = step3Data[q.id] === opt.value;
@@ -164,11 +158,10 @@ export default function Step3Page(): React.ReactElement {
             onClick={() => router.push("/step-4")}
             className={stepNavPrimaryButtonClass}
           >
-            Далее
+            {continueLabel}
           </Button>
         </div>
       </div>
     </StepLayout>
   );
 }
-

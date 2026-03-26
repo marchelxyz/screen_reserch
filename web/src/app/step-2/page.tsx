@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { ProgressBar } from "@/components/ProgressBar";
 import { QuestionCard } from "@/components/QuestionCard";
-import { SessionHint } from "@/components/SessionHint";
 import { StepLayout } from "@/components/StepLayout";
+import { TestMotivation } from "@/components/TestMotivation";
 import {
   stepNavPrimaryButtonClass,
   stepPageContentClass,
-  stepSectionTitleClass,
 } from "@/lib/stepPageTheme";
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
+import { getContinueButtonLabel } from "@/lib/testMotivation";
 import {
   Step1Data,
   Step2Data,
@@ -52,7 +52,7 @@ export default function Step2Page(): React.ReactElement {
       return;
     }
     if (!sessionId) {
-      router.replace("/intro");
+      router.replace("/briefing");
       return;
     }
     if (!isStep1Complete(step1Data)) {
@@ -62,6 +62,7 @@ export default function Step2Page(): React.ReactElement {
 
   const complete = isStep2Complete(step2Data);
   const answeredCount = getAllAnsweredCount(step1Data, step2Data, step3Data, step4Data);
+  const continueLabel = getContinueButtonLabel(answeredCount);
 
   const questions: Step2Question[] = [
     { id: "s1", title: "Мне важны стабильность и понятность процессов." },
@@ -79,19 +80,12 @@ export default function Step2Page(): React.ReactElement {
   }
 
   return (
-    <StepLayout showExitTest>
+    <StepLayout>
       <div className={stepPageContentClass}>
-        <div className="mb-5">
+        <div className="mb-2">
           <ProgressBar answeredQuestions={answeredCount} totalQuestions={TOTAL_QUESTIONS_COUNT} />
-          <div className="mt-2">
-            <SessionHint sessionId={sessionId} />
-          </div>
+          <TestMotivation profileName={profileName} answeredCount={answeredCount} />
         </div>
-
-        <h1 className={stepSectionTitleClass}>
-          {profileName.trim().length > 0 ? `${profileName}, ` : ""}
-          Тест Герчикова - Внутренняя мотивация
-        </h1>
 
         <div className="space-y-4">
           {questions.map((q) => {
@@ -140,11 +134,10 @@ export default function Step2Page(): React.ReactElement {
             onClick={() => router.push("/step-3")}
             className={stepNavPrimaryButtonClass}
           >
-            Далее
+            {continueLabel}
           </Button>
         </div>
       </div>
     </StepLayout>
   );
 }
-
