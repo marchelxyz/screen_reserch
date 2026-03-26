@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { ProgressBar } from "@/components/ProgressBar";
 import { StepLayout } from "@/components/StepLayout";
+import {
+  stepPageContentClass,
+  stepSecondaryTextClass,
+  stepSurfaceCardClass,
+} from "@/lib/stepPageTheme";
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
 import { Step4Data, SubmissionStatus, useFormStore } from "@/store/useFormStore";
 
@@ -64,27 +69,29 @@ export default function FinishPage(): React.ReactElement {
 
   return (
     <StepLayout>
-      <div className="mx-auto w-full max-w-2xl px-4 py-10">
-        <div className="rounded-3xl border border-black/5 bg-white/70 backdrop-blur shadow-sm p-6 sm:p-10 text-center">
-          <ProgressBar answeredQuestions={answeredCount} totalQuestions={TOTAL_QUESTIONS_COUNT} />
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+      <div className={stepPageContentClass}>
+        <div className={`${stepSurfaceCardClass} px-6 py-8 text-center sm:px-10 sm:py-10`}>
+          <div className="mb-6">
+            <ProgressBar answeredQuestions={answeredCount} totalQuestions={TOTAL_QUESTIONS_COUNT} />
+          </div>
+          <h1 className="mb-4 text-balance text-[28px] font-extrabold leading-tight text-[#8C8C8C] sm:text-[32px]">
             {profileName.trim().length > 0 ? `${profileName}, ` : ""}
             большое спасибо, с вами свяжется HR в течение суток
           </h1>
 
-          <p className="mt-4 text-sm sm:text-base text-foreground/70">
+          <p className={`mt-4 ${stepSecondaryTextClass}`}>
             Мы уже отправили ваши ответы на сервер. Если вы видите сообщение
             об ошибке, попробуйте отправить еще раз.
           </p>
 
           {getStatusText(submissionStatus) ? (
-            <p className="mt-5 text-sm text-foreground/60">
+            <p className={`mt-5 ${stepSecondaryTextClass} opacity-90`}>
               {getStatusText(submissionStatus)}
             </p>
           ) : null}
 
           {submissionStatus === "error" && submitError ? (
-            <p className="mt-2 text-xs text-foreground/50">{submitError}</p>
+            <p className={`mt-2 text-xs ${stepSecondaryTextClass} opacity-75`}>{submitError}</p>
           ) : null}
 
           {submissionStatus === "error" ? (

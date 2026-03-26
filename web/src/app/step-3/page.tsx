@@ -6,6 +6,11 @@ import { Button } from "@/components/Button";
 import { ProgressBar } from "@/components/ProgressBar";
 import { QuestionCard } from "@/components/QuestionCard";
 import { StepLayout } from "@/components/StepLayout";
+import {
+  stepNavPrimaryButtonClass,
+  stepPageContentClass,
+  stepSectionTitleClass,
+} from "@/lib/stepPageTheme";
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
 import {
   LikertAnswer,
@@ -95,12 +100,12 @@ export default function Step3Page(): React.ReactElement {
 
   return (
     <StepLayout>
-      <div className="mx-auto w-full max-w-3xl px-4 py-6">
+      <div className={stepPageContentClass}>
         <div className="mb-5">
           <ProgressBar answeredQuestions={answeredCount} totalQuestions={TOTAL_QUESTIONS_COUNT} />
         </div>
 
-        <h1 className="text-xl sm:text-2xl font-bold mb-4 text-foreground">
+        <h1 className={stepSectionTitleClass}>
           {profileName.trim().length > 0 ? `${profileName}, ` : ""}
           Эмоциональный статус
         </h1>
@@ -116,7 +121,7 @@ export default function Step3Page(): React.ReactElement {
                     <label
                       key={opt.value}
                       htmlFor={inputId}
-                      className="flex items-center gap-3 cursor-pointer select-none text-sm text-foreground/90"
+                      className="flex items-center gap-3"
                     >
                       <input
                         id={inputId}
@@ -135,11 +140,11 @@ export default function Step3Page(): React.ReactElement {
           ))}
         </div>
 
-        <div className="mt-7 flex items-center justify-between gap-3">
+        <div className="mt-7 flex flex-wrap items-center justify-between gap-3">
           <Button
             variant="secondary"
             onClick={() => router.push("/step-2")}
-            className="w-32"
+            className="w-[160px]"
           >
             Назад
           </Button>
@@ -147,7 +152,7 @@ export default function Step3Page(): React.ReactElement {
           <Button
             disabled={!complete}
             onClick={() => router.push("/step-4")}
-            className="w-40"
+            className={stepNavPrimaryButtonClass}
           >
             Далее
           </Button>

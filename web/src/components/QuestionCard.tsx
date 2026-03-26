@@ -1,4 +1,9 @@
 import React from "react";
+import {
+  stepQuestionTitleClass,
+  stepSecondaryTextClass,
+  stepSurfaceCardClass,
+} from "@/lib/stepPageTheme";
 
 export type QuestionCardProps = {
   title: string;
@@ -12,16 +17,16 @@ export function QuestionCard({
   children,
 }: QuestionCardProps): React.ReactElement {
   return (
-    <section className="rounded-2xl border border-black/5 bg-white/70 backdrop-blur p-4 sm:p-5 shadow-sm">
+    <section className={`${stepSurfaceCardClass} p-6 sm:px-8 sm:py-6`}>
       <header className="mb-3">
-        <h2 className="text-base sm:text-lg font-bold text-foreground">
-          {title}
-        </h2>
+        <h2 className={stepQuestionTitleClass}>{title}</h2>
         {description ? (
-          <p className="mt-1 text-sm text-foreground/70">{description}</p>
+          <p className={`mt-1 ${stepSecondaryTextClass}`}>{description}</p>
         ) : null}
       </header>
-      <div>{children}</div>
+      <div className={`${stepSecondaryTextClass} [&_label]:cursor-pointer [&_label]:select-none`}>
+        {children}
+      </div>
     </section>
   );
 }

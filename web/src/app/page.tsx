@@ -12,7 +12,7 @@ export default function WelcomePage(): React.ReactElement {
     <StepLayout>
       <div className="flex flex-1 items-center justify-center px-4">
         <div className="w-full max-w-[860px] rounded-[34px] bg-[#DDDDDD] shadow-[0px_4px_75px_0px_rgba(0,0,0,0.20)] px-[48px] py-[24px]">
-          <div className="text-[#5F5E5E] text-[20px] font-extrabold leading-[1.4]">
+          <div className="text-[#5F5E5E] text-[20px] font-normal leading-[1.4]">
             <p>
               Мы ценим ваше время и хотим, чтобы наше дальнейшее общение
               было максимально предметным и полезным для обеих сторон.

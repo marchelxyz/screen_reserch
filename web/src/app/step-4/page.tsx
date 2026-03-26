@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { ProgressBar } from "@/components/ProgressBar";
 import { StepLayout } from "@/components/StepLayout";
+import {
+  stepInputClass,
+  stepLabelClass,
+  stepNavPrimaryButtonClass,
+  stepPageContentClass,
+  stepSectionTitleClass,
+  stepSurfaceCardClass,
+} from "@/lib/stepPageTheme";
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
 import { Step4Data, Step3Data, useFormStore } from "@/store/useFormStore";
 
@@ -92,38 +100,38 @@ export default function Step4Page(): React.ReactElement {
 
   return (
     <StepLayout>
-      <div className="mx-auto w-full max-w-3xl px-4 py-6">
+      <div className={stepPageContentClass}>
         <div className="mb-5">
           <ProgressBar answeredQuestions={answeredCount} totalQuestions={TOTAL_QUESTIONS_COUNT} />
         </div>
 
-        <h1 className="text-xl sm:text-2xl font-bold mb-4 text-foreground">
+        <h1 className={stepSectionTitleClass}>
           {profileName.trim().length > 0 ? `${profileName}, ` : ""}
           Социальные якоря
         </h1>
 
-        <div className="rounded-2xl border border-black/5 bg-white/70 backdrop-blur p-4 sm:p-5 shadow-sm">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className={`${stepSurfaceCardClass} p-6 sm:px-8 sm:py-6`}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="text-sm font-semibold text-foreground/80">
+              <label className={stepLabelClass}>
                 Город
               </label>
               <input
                 value={step4Data.city}
                 onChange={(e) => setField("city", e.target.value)}
-                className="mt-2 w-full rounded-xl border border-black/10 bg-white/80 px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
+                className={stepInputClass}
                 placeholder="Например, Москва"
               />
             </div>
 
             <div>
-              <label className="text-sm font-semibold text-foreground/80">
+              <label className={stepLabelClass}>
                 Семейное положение
               </label>
               <select
                 value={step4Data.familyStatus}
                 onChange={(e) => setField("familyStatus", e.target.value)}
-                className="mt-2 w-full rounded-xl border border-black/10 bg-white/80 px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
+                className={stepInputClass}
               >
                 <option value="" disabled>
                   Выберите значение
@@ -137,13 +145,13 @@ export default function Step4Page(): React.ReactElement {
             </div>
 
             <div>
-              <label className="text-sm font-semibold text-foreground/80">
+              <label className={stepLabelClass}>
                 Дети
               </label>
               <select
                 value={step4Data.children}
                 onChange={(e) => setField("children", e.target.value)}
-                className="mt-2 w-full rounded-xl border border-black/10 bg-white/80 px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
+                className={stepInputClass}
               >
                 <option value="" disabled>
                   Выберите значение
@@ -157,13 +165,13 @@ export default function Step4Page(): React.ReactElement {
             </div>
 
             <div>
-              <label className="text-sm font-semibold text-foreground/80">
+              <label className={stepLabelClass}>
                 Образование
               </label>
               <select
                 value={step4Data.education}
                 onChange={(e) => setField("education", e.target.value)}
-                className="mt-2 w-full rounded-xl border border-black/10 bg-white/80 px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
+                className={stepInputClass}
               >
                 <option value="" disabled>
                   Выберите значение
@@ -177,36 +185,36 @@ export default function Step4Page(): React.ReactElement {
             </div>
 
             <div className="sm:col-span-2">
-              <label className="text-sm font-semibold text-foreground/80">
+              <label className={stepLabelClass}>
                 Любимая книга
               </label>
               <input
                 value={step4Data.favoriteBook}
                 onChange={(e) => setField("favoriteBook", e.target.value)}
-                className="mt-2 w-full rounded-xl border border-black/10 bg-white/80 px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
+                className={stepInputClass}
                 placeholder="Название книги"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="text-sm font-semibold text-foreground/80">
+              <label className={stepLabelClass}>
                 Любимый фильм
               </label>
               <input
                 value={step4Data.favoriteFilm}
                 onChange={(e) => setField("favoriteFilm", e.target.value)}
-                className="mt-2 w-full rounded-xl border border-black/10 bg-white/80 px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
+                className={stepInputClass}
                 placeholder="Название фильма"
               />
             </div>
           </div>
         </div>
 
-        <div className="mt-7 flex items-center justify-between gap-3">
+        <div className="mt-7 flex flex-wrap items-center justify-between gap-3">
           <Button
             variant="secondary"
             onClick={() => router.push("/step-3")}
-            className="w-32"
+            className="w-[160px]"
           >
             Назад
           </Button>
@@ -214,7 +222,7 @@ export default function Step4Page(): React.ReactElement {
           <Button
             disabled={!complete}
             onClick={() => router.push("/finish")}
-            className="w-48"
+            className={stepNavPrimaryButtonClass}
           >
             Завершить
           </Button>
