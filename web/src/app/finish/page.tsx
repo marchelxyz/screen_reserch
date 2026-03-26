@@ -29,13 +29,23 @@ function getStatusText(status: SubmissionStatus): string {
     case "submitting":
       return "Отправляем данные...";
     case "submitted":
-      return "Данные отправлены.";
+      return "";
     case "error":
       return "Не удалось отправить данные. Попробуйте еще раз.";
     case "idle":
     default:
       return "";
   }
+}
+
+function getFinishMessage(profileName: string): string {
+  const trimmed = profileName.trim();
+  const body =
+    "большое спасибо за честные ответы! Мы уже отправили ваши ответы. В течение суток с вами свяжется HR-специалист.";
+  if (trimmed.length > 0) {
+    return `${trimmed}, ${body}`;
+  }
+  return `Большое спасибо за честные ответы! Мы уже отправили ваши ответы. В течение суток с вами свяжется HR-специалист.`;
 }
 
 export default function FinishPage(): React.ReactElement {
@@ -77,14 +87,14 @@ export default function FinishPage(): React.ReactElement {
             <ProgressBar answeredQuestions={answeredCount} totalQuestions={TOTAL_QUESTIONS_COUNT} />
           </div>
           <h1 className="mb-4 text-balance text-[28px] font-extrabold leading-tight text-[#8C8C8C] sm:text-[32px]">
-            {profileName.trim().length > 0 ? `${profileName}, ` : ""}
-            большое спасибо, с вами свяжется HR в течение суток
+            {getFinishMessage(profileName)}
           </h1>
 
-          <p className={`mt-4 ${stepSecondaryTextClass}`}>
-            Мы уже отправили ваши ответы на сервер. Если вы видите сообщение
-            об ошибке, попробуйте отправить еще раз.
-          </p>
+          {submissionStatus === "error" ? (
+            <p className={`mt-4 ${stepSecondaryTextClass}`}>
+              Если вы видите сообщение об ошибке ниже, попробуйте отправить ещё раз.
+            </p>
+          ) : null}
 
           {getStatusText(submissionStatus) ? (
             <p className={`mt-5 ${stepSecondaryTextClass} opacity-90`}>
