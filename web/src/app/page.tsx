@@ -10,34 +10,38 @@ export default function WelcomePage(): React.ReactElement {
 
   return (
     <StepLayout>
-      <div className="flex flex-1 items-center justify-center px-4 pb-10 pt-2">
-        <div className="w-full max-w-[1037px] rounded-[38px] bg-[#DCDCDC] shadow-[0px_4px_75px_0px_rgba(0,0,0,0.2)] px-8 py-8 sm:px-10 sm:py-9">
-          <div className="text-[#5F5E5E] text-[26px] font-extrabold leading-[1.35]">
+      <div className="flex flex-1 items-center justify-center px-4 pb-6">
+        <div className="w-full max-w-[1037px] rounded-[41px] bg-[#DDDDDD] shadow-[0px_4px_75px_0px_rgba(0,0,0,0.20)] px-[60px] py-[32px]">
+          <div className="text-[#5F5E5E] text-[26px] font-extrabold leading-[normal]">
             <p>
-              Мы ценим ваше время и хотим, чтобы наше дальнейшее общение было
-              максимально предметным и полезным для обеих сторон.
+              Мы ценим ваше время и хотим, чтобы наше дальнейшее общение
+              было максимально предметным и полезным для обеих сторон.
             </p>
-            <p className="mt-5">
-              Просим вас уделить около 30 минут на этот интерактивный опрос.
-              <br />
+            <br />
+            <p>
+              Просим вас уделить около 30 минут на этот интерактивный опрос.{" "}
               Он состоит из 4 коротких шагов, которые помогут нам:
             </p>
-            <ul className="mt-1 list-disc pl-9">
+            <ul className="list-disc pl-[39px]">
               <li>Оценить ваш подход к решению нестандартных задач.</li>
               <li>Понять, что вас по-настоящему мотивирует и драйвит.</li>
-              <li>Предложить вам позицию и условия, которые идеально подойдут именно вам.</li>
+              <li>
+                Предложить вам позицию и условия, которые идеально подойдут
+                именно вам.
+              </li>
             </ul>
-            <p className="mt-5">
-              Здесь нет правильных или неправильных ответов - нам важен ваш
-              реальный профессиональный стиль. Выделите спокойное время,
+            <br />
+            <p>
+              Здесь нет правильных или неправильных ответов &mdash; нам важен
+              ваш реальный профессиональный стиль. Выделите спокойное время,
               налейте кофе и давайте начнем!
             </p>
           </div>
 
-          <div className="mt-7 flex justify-center">
+          <div className="mt-[28px] flex justify-center">
             <Button
               onClick={() => router.push("/intro")}
-              className="h-[64px] w-[340px] text-[40px] font-extrabold tracking-[0.01em] leading-none"
+              className="h-[71px] w-[344px] text-[28px] font-extrabold leading-none"
             >
               НАЧАТЬ ЗНАКОМСТВО
             </Button>
