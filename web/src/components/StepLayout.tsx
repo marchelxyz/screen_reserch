@@ -7,16 +7,16 @@ export type StepLayoutProps = {
 };
 
 /**
- * Shared shell for every screen.
- * Content capped at 1512px (16" MacBook) — only the background grows beyond.
- * Welcome page must fit entirely in viewport without scrolling on 14–16".
+ * Общая оболочка экранов.
+ * Контент по ширине ограничен max-w в шапке; фон тянется на всю ширину.
+ * Высота по контенту: длинные шаги опроса прокручиваются страницей.
  */
 export function StepLayout({
   children,
   hideHeaderTitle = false,
 }: StepLayoutProps): React.ReactElement {
   return (
-    <div className="relative h-screen flex flex-col bg-[#F2F2F2] overflow-hidden">
+    <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-[#F2F2F2]">
       <div className="pointer-events-none absolute right-[-70px] bottom-[-80px] h-[560px] w-[560px] rounded-full bg-[radial-gradient(circle,_rgba(0,181,150,0.92)_0%,_rgba(0,181,150,0.28)_55%,_rgba(0,181,150,0)_100%)] blur-[22px]" />
       <div className="pointer-events-none absolute left-[20px] top-[40px] h-[200px] w-[420px] bg-white/50 blur-[52px]" />
 
@@ -51,7 +51,7 @@ export function StepLayout({
         </div>
       </header>
 
-      <main className="relative z-10 flex flex-1 w-full min-h-0">{children}</main>
+      <main className="relative z-10 flex w-full flex-1 flex-col">{children}</main>
     </div>
   );
 }

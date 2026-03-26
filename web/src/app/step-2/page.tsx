@@ -6,6 +6,11 @@ import { Button } from "@/components/Button";
 import { ProgressBar } from "@/components/ProgressBar";
 import { QuestionCard } from "@/components/QuestionCard";
 import { StepLayout } from "@/components/StepLayout";
+import {
+  stepNavPrimaryButtonClass,
+  stepPageContentClass,
+  stepSectionTitleClass,
+} from "@/lib/stepPageTheme";
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
 import {
   Step1Data,
@@ -68,12 +73,12 @@ export default function Step2Page(): React.ReactElement {
 
   return (
     <StepLayout>
-      <div className="mx-auto w-full max-w-3xl px-4 py-6">
+      <div className={stepPageContentClass}>
         <div className="mb-5">
           <ProgressBar answeredQuestions={answeredCount} totalQuestions={TOTAL_QUESTIONS_COUNT} />
         </div>
 
-        <h1 className="text-xl sm:text-2xl font-bold mb-4 text-foreground">
+        <h1 className={stepSectionTitleClass}>
           {profileName.trim().length > 0 ? `${profileName}, ` : ""}
           Тест Герчикова - Внутренняя мотивация
         </h1>
@@ -85,7 +90,7 @@ export default function Step2Page(): React.ReactElement {
             return (
               <QuestionCard key={q.id} title={q.title}>
                 <div className="flex flex-wrap gap-4">
-                  <label htmlFor={`${inputId}-yes`} className="flex items-center gap-2 text-sm text-foreground/90">
+                  <label htmlFor={`${inputId}-yes`} className="flex items-center gap-2">
                     <input
                       id={`${inputId}-yes`}
                       type="radio"
@@ -95,7 +100,7 @@ export default function Step2Page(): React.ReactElement {
                     />
                     <span>Да</span>
                   </label>
-                  <label htmlFor={`${inputId}-no`} className="flex items-center gap-2 text-sm text-foreground/90">
+                  <label htmlFor={`${inputId}-no`} className="flex items-center gap-2">
                     <input
                       id={`${inputId}-no`}
                       type="radio"
@@ -111,11 +116,11 @@ export default function Step2Page(): React.ReactElement {
           })}
         </div>
 
-        <div className="mt-7 flex items-center justify-between gap-3">
+        <div className="mt-7 flex flex-wrap items-center justify-between gap-3">
           <Button
             variant="secondary"
             onClick={() => router.push("/step-1")}
-            className="w-32"
+            className="w-[160px]"
           >
             Назад
           </Button>
@@ -123,7 +128,7 @@ export default function Step2Page(): React.ReactElement {
           <Button
             disabled={!complete}
             onClick={() => router.push("/step-3")}
-            className="w-40"
+            className={stepNavPrimaryButtonClass}
           >
             Далее
           </Button>

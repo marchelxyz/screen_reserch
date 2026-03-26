@@ -4,6 +4,13 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { StepLayout } from "@/components/StepLayout";
+import {
+  stepInputClass,
+  stepLabelClass,
+  stepNavPrimaryButtonClass,
+  stepSecondaryTextClass,
+  stepSurfaceCardClass,
+} from "@/lib/stepPageTheme";
 import { isProfileReady } from "@/lib/progress";
 import { useFormStore } from "@/store/useFormStore";
 
@@ -18,14 +25,14 @@ export default function IntroPage(): React.ReactElement {
   return (
     <StepLayout>
       <div className="flex flex-1 items-center justify-center px-4 pb-10 pt-2">
-        <div className="w-full max-w-[760px] rounded-[34px] bg-[#DCDCDC] shadow-[0px_4px_55px_0px_rgba(0,0,0,0.16)] px-8 py-8">
-          <p className="text-[#5F5E5E] text-[22px] leading-[1.35] font-extrabold">
+        <div className={`w-full max-w-[860px] px-8 py-8 ${stepSurfaceCardClass}`}>
+          <p className={`text-[20px] sm:text-[22px] ${stepSecondaryTextClass}`}>
             Перед началом опроса укажите, как к вам обращаться. Это поможет сделать
             диалог более персональным и удобным для вас.
           </p>
 
           <div className="mt-6">
-            <label htmlFor="profile-name" className="block text-sm font-bold text-[#5F5E5E]">
+            <label htmlFor="profile-name" className={`block ${stepLabelClass}`}>
               Ваше имя
             </label>
             <input
@@ -33,11 +40,11 @@ export default function IntroPage(): React.ReactElement {
               value={profileName}
               onChange={(event) => setProfileName(event.target.value)}
               placeholder="Например, Алексей"
-              className="mt-1 h-12 w-full rounded-2xl border border-black/15 bg-white/85 px-4 text-[18px] font-semibold text-[#4F4F4F] outline-none focus:ring-2 focus:ring-[#00B596]/35"
+              className={`${stepInputClass} h-12 text-[18px]`}
             />
           </div>
 
-          <label className="mt-3 inline-flex items-start gap-3 text-xs text-[#5F5E5E]">
+          <label className={`mt-3 inline-flex items-start gap-3 text-xs ${stepSecondaryTextClass}`}>
             <input
               type="checkbox"
               checked={personalDataConsent}
@@ -52,14 +59,14 @@ export default function IntroPage(): React.ReactElement {
             </span>
           </label>
 
-          <div className="mt-6 flex items-center justify-between gap-3">
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
             <Button variant="secondary" onClick={() => router.push("/")} className="w-[160px]">
               Назад
             </Button>
             <Button
               onClick={() => router.push("/step-1")}
               disabled={!canStart}
-              className="h-[58px] w-[280px] text-[32px] font-extrabold leading-none"
+              className={`${stepNavPrimaryButtonClass} min-w-[220px] sm:min-w-[280px] text-[18px] sm:text-[22px]`}
             >
               ПРОДОЛЖИТЬ
             </Button>

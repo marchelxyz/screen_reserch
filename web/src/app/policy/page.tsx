@@ -1,15 +1,20 @@
 import React from "react";
 import { StepLayout } from "@/components/StepLayout";
+import {
+  stepPageContentClass,
+  stepSecondaryTextClass,
+  stepSurfaceCardClass,
+} from "@/lib/stepPageTheme";
 
 export default function PolicyPage(): React.ReactElement {
   return (
     <StepLayout hideHeaderTitle>
-      <div className="mx-auto w-full max-w-3xl px-4 py-8">
-        <div className="rounded-3xl bg-[#DCDCDC] px-6 py-6 sm:px-8">
-          <h1 className="text-2xl font-extrabold text-[#5F5E5E]">
+      <div className={stepPageContentClass}>
+        <div className={`${stepSurfaceCardClass} px-6 py-6 sm:px-8 sm:py-8`}>
+          <h1 className="mb-4 text-[28px] font-extrabold leading-tight text-[#8C8C8C] sm:text-[32px]">
             Политика обработки персональных данных
           </h1>
-          <p className="mt-4 text-[#5F5E5E] text-base leading-relaxed font-semibold">
+          <p className={stepSecondaryTextClass}>
             Здесь разместите официальный текст политики. Этот экран добавлен как
             точка перехода с welcome-формы и может быть заменен на вашу полную
             юридическую страницу.
