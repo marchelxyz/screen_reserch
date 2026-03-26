@@ -57,7 +57,7 @@ export default function Step3Page(): React.ReactElement {
 
   useEffect(() => {
     if (!isProfileReady(profileName, personalDataConsent)) {
-      router.replace("/");
+      router.replace("/intro");
       return;
     }
     if (!isStep2Complete(step2Data)) {

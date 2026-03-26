@@ -37,7 +37,7 @@ export default function Step1Page(): React.ReactElement {
 
   useEffect(() => {
     if (!isProfileReady(profileName, personalDataConsent)) {
-      router.replace("/");
+      router.replace("/intro");
     }
   }, [personalDataConsent, profileName, router]);
 
