@@ -54,7 +54,19 @@ export function getAllAnsweredCount(
   );
 }
 
-export function isProfileReady(profileName: string, personalDataConsent: boolean): boolean {
-  return profileName.trim().length > 0 && personalDataConsent;
+/**
+ * Профиль готов к тесту: имя, согласие и зафиксированное время согласия (юридический учёт).
+ */
+export function isProfileReady(
+  profileName: string,
+  personalDataConsent: boolean,
+  consentRecordedAt: string | null
+): boolean {
+  return (
+    profileName.trim().length > 0 &&
+    personalDataConsent &&
+    consentRecordedAt !== null &&
+    consentRecordedAt.trim().length > 0
+  );
 }
 

@@ -49,6 +49,7 @@ export default function Step4Page(): React.ReactElement {
   const router = useRouter();
   const profileName = useFormStore((s) => s.profileName);
   const personalDataConsent = useFormStore((s) => s.personalDataConsent);
+  const consentRecordedAt = useFormStore((s) => s.consentRecordedAt);
   const sessionId = useFormStore((s) => s.sessionId);
   const step1Data = useFormStore((s) => s.step1Data);
   const step2Data = useFormStore((s) => s.step2Data);
@@ -57,7 +58,7 @@ export default function Step4Page(): React.ReactElement {
   const setStep4Data = useFormStore((s) => s.setStep4Data);
 
   useEffect(() => {
-    if (!isProfileReady(profileName, personalDataConsent)) {
+    if (!isProfileReady(profileName, personalDataConsent, consentRecordedAt)) {
       router.replace("/intro");
       return;
     }
@@ -68,7 +69,7 @@ export default function Step4Page(): React.ReactElement {
     if (!isStep3Complete(step3Data)) {
       router.replace("/step-3");
     }
-  }, [personalDataConsent, profileName, router, sessionId, step3Data]);
+  }, [consentRecordedAt, personalDataConsent, profileName, router, sessionId, step3Data]);
 
   const complete = isStep4Complete(step4Data);
   const answeredCount = getAllAnsweredCount(step1Data, step2Data, step3Data, step4Data);

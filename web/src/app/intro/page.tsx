@@ -21,7 +21,8 @@ export default function IntroPage(): React.ReactElement {
   const setProfileName = useFormStore((s) => s.setProfileName);
   const setPersonalDataConsent = useFormStore((s) => s.setPersonalDataConsent);
   const beginTestSession = useFormStore((s) => s.beginTestSession);
-  const canStart = isProfileReady(profileName, personalDataConsent);
+  const consentRecordedAt = useFormStore((s) => s.consentRecordedAt);
+  const canStart = isProfileReady(profileName, personalDataConsent, consentRecordedAt);
 
   return (
     <StepLayout>

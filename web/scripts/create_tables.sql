@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS screening_submission (
   session_id TEXT NOT NULL UNIQUE,
   profile_name TEXT NOT NULL,
   personal_data_consent BOOLEAN NOT NULL,
+  consent_recorded_at TIMESTAMPTZ NOT NULL,
 
   step1_data JSONB NOT NULL,
   step2_data JSONB NOT NULL,
