@@ -12,14 +12,14 @@ export type Step1Data = {
 };
 
 export type Step2Data = {
-  s1: boolean;
-  s2: boolean;
-  s3: boolean;
-  s4: boolean;
-  s5: boolean;
-  s6: boolean;
-  s7: boolean;
-  s8: boolean;
+  s1: boolean | null;
+  s2: boolean | null;
+  s3: boolean | null;
+  s4: boolean | null;
+  s5: boolean | null;
+  s6: boolean | null;
+  s7: boolean | null;
+  s8: boolean | null;
 };
 
 export type LikertAnswer =
@@ -54,6 +54,8 @@ export type Step4Data = {
 export type SubmissionStatus = "idle" | "submitting" | "submitted" | "error";
 
 export type SubmitPayload = {
+  profileName: string;
+  personalDataConsent: boolean;
   step1Data: Step1Data;
   step2Data: Step2Data;
   step3Data: Step3Data;
@@ -61,6 +63,8 @@ export type SubmitPayload = {
 };
 
 type FormStore = {
+  profileName: string;
+  personalDataConsent: boolean;
   step1Data: Step1Data;
   step2Data: Step2Data;
   step3Data: Step3Data;
@@ -69,6 +73,8 @@ type FormStore = {
   submissionStatus: SubmissionStatus;
   submitError: string | null;
 
+  setProfileName: (name: string) => void;
+  setPersonalDataConsent: (consent: boolean) => void;
   setStep1Data: (data: Step1Data) => void;
   setStep2Data: (data: Step2Data) => void;
   setStep3Data: (data: Step3Data) => void;
@@ -86,14 +92,14 @@ const defaultStep1Data: Step1Data = {
 };
 
 const defaultStep2Data: Step2Data = {
-  s1: false,
-  s2: false,
-  s3: false,
-  s4: false,
-  s5: false,
-  s6: false,
-  s7: false,
-  s8: false,
+  s1: null,
+  s2: null,
+  s3: null,
+  s4: null,
+  s5: null,
+  s6: null,
+  s7: null,
+  s8: null,
 };
 
 const defaultStep3Data: Step3Data = {
@@ -121,6 +127,8 @@ const defaultStep4Data: Step4Data = {
 export const useFormStore = create<FormStore>()(
   persist(
     (set, get) => ({
+      profileName: "",
+      personalDataConsent: false,
       step1Data: defaultStep1Data,
       step2Data: defaultStep2Data,
       step3Data: defaultStep3Data,
@@ -129,6 +137,8 @@ export const useFormStore = create<FormStore>()(
       submissionStatus: "idle",
       submitError: null,
 
+      setProfileName: (name) => set({ profileName: name }),
+      setPersonalDataConsent: (consent) => set({ personalDataConsent: consent }),
       setStep1Data: (data) => set({ step1Data: data }),
       setStep2Data: (data) => set({ step2Data: data }),
       setStep3Data: (data) => set({ step3Data: data }),
@@ -146,6 +156,8 @@ export const useFormStore = create<FormStore>()(
         set({ submissionStatus: "submitting", submitError: null });
 
         const payload: SubmitPayload = {
+          profileName: state.profileName,
+          personalDataConsent: state.personalDataConsent,
           step1Data: state.step1Data,
           step2Data: state.step2Data,
           step3Data: state.step3Data,
@@ -175,6 +187,8 @@ export const useFormStore = create<FormStore>()(
     {
       name: "profile-uspese-form",
       partialize: (state) => ({
+        profileName: state.profileName,
+        personalDataConsent: state.personalDataConsent,
         step1Data: state.step1Data,
         step2Data: state.step2Data,
         step3Data: state.step3Data,

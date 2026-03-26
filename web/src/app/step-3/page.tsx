@@ -6,6 +6,7 @@ import { Button } from "@/components/Button";
 import { ProgressBar } from "@/components/ProgressBar";
 import { QuestionCard } from "@/components/QuestionCard";
 import { StepLayout } from "@/components/StepLayout";
+import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
 import {
   LikertAnswer,
   Step2Data,
@@ -24,15 +25,8 @@ type LikertOption = {
 };
 
 function isStep2Complete(data: Step2Data): boolean {
-  return (
-    data.s1 ||
-    data.s2 ||
-    data.s3 ||
-    data.s4 ||
-    data.s5 ||
-    data.s6 ||
-    data.s7 ||
-    data.s8
+  return [data.s1, data.s2, data.s3, data.s4, data.s5, data.s6, data.s7, data.s8].every(
+    (item) => item !== null
   );
 }
 
@@ -53,17 +47,26 @@ function isStep3Complete(data: Step3Data): boolean {
 
 export default function Step3Page(): React.ReactElement {
   const router = useRouter();
+  const profileName = useFormStore((s) => s.profileName);
+  const personalDataConsent = useFormStore((s) => s.personalDataConsent);
+  const step1Data = useFormStore((s) => s.step1Data);
   const step2Data = useFormStore((s) => s.step2Data);
   const step3Data = useFormStore((s) => s.step3Data);
+  const step4Data = useFormStore((s) => s.step4Data);
   const setStep3Data = useFormStore((s) => s.setStep3Data);
 
   useEffect(() => {
+    if (!isProfileReady(profileName, personalDataConsent)) {
+      router.replace("/");
+      return;
+    }
     if (!isStep2Complete(step2Data)) {
       router.replace("/step-2");
     }
-  }, [router, step2Data]);
+  }, [personalDataConsent, profileName, router, step2Data]);
 
   const complete = isStep3Complete(step3Data);
+  const answeredCount = getAllAnsweredCount(step1Data, step2Data, step3Data, step4Data);
 
   const likertOptions: LikertOption[] = [
     { value: "fully_agree", label: "Полностью согласен" },
@@ -94,10 +97,11 @@ export default function Step3Page(): React.ReactElement {
     <StepLayout>
       <div className="mx-auto w-full max-w-3xl px-4 py-6">
         <div className="mb-5">
-          <ProgressBar totalSteps={4} activeStep={3} />
+          <ProgressBar answeredQuestions={answeredCount} totalQuestions={TOTAL_QUESTIONS_COUNT} />
         </div>
 
         <h1 className="text-xl sm:text-2xl font-bold mb-4 text-foreground">
+          {profileName.trim().length > 0 ? `${profileName}, ` : ""}
           Эмоциональный статус
         </h1>
 

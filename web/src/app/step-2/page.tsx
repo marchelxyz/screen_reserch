@@ -6,6 +6,7 @@ import { Button } from "@/components/Button";
 import { ProgressBar } from "@/components/ProgressBar";
 import { QuestionCard } from "@/components/QuestionCard";
 import { StepLayout } from "@/components/StepLayout";
+import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
 import {
   Step1Data,
   Step2Data,
@@ -22,31 +23,33 @@ function isStep1Complete(data: Step1Data): boolean {
 }
 
 function isStep2Complete(data: Step2Data): boolean {
-  return (
-    data.s1 ||
-    data.s2 ||
-    data.s3 ||
-    data.s4 ||
-    data.s5 ||
-    data.s6 ||
-    data.s7 ||
-    data.s8
+  return [data.s1, data.s2, data.s3, data.s4, data.s5, data.s6, data.s7, data.s8].every(
+    (item) => item !== null
   );
 }
 
 export default function Step2Page(): React.ReactElement {
   const router = useRouter();
+  const profileName = useFormStore((s) => s.profileName);
+  const personalDataConsent = useFormStore((s) => s.personalDataConsent);
   const step1Data = useFormStore((s) => s.step1Data);
   const step2Data = useFormStore((s) => s.step2Data);
+  const step3Data = useFormStore((s) => s.step3Data);
+  const step4Data = useFormStore((s) => s.step4Data);
   const setStep2Data = useFormStore((s) => s.setStep2Data);
 
   useEffect(() => {
+    if (!isProfileReady(profileName, personalDataConsent)) {
+      router.replace("/");
+      return;
+    }
     if (!isStep1Complete(step1Data)) {
       router.replace("/step-1");
     }
-  }, [router, step1Data]);
+  }, [personalDataConsent, profileName, router, step1Data]);
 
   const complete = isStep2Complete(step2Data);
+  const answeredCount = getAllAnsweredCount(step1Data, step2Data, step3Data, step4Data);
 
   const questions: Step2Question[] = [
     { id: "s1", title: "Мне важны стабильность и понятность процессов." },
@@ -67,10 +70,11 @@ export default function Step2Page(): React.ReactElement {
     <StepLayout>
       <div className="mx-auto w-full max-w-3xl px-4 py-6">
         <div className="mb-5">
-          <ProgressBar totalSteps={4} activeStep={2} />
+          <ProgressBar answeredQuestions={answeredCount} totalQuestions={TOTAL_QUESTIONS_COUNT} />
         </div>
 
         <h1 className="text-xl sm:text-2xl font-bold mb-4 text-foreground">
+          {profileName.trim().length > 0 ? `${profileName}, ` : ""}
           Тест Герчикова - Внутренняя мотивация
         </h1>
 
@@ -80,21 +84,28 @@ export default function Step2Page(): React.ReactElement {
             const checked = step2Data[q.id];
             return (
               <QuestionCard key={q.id} title={q.title}>
-                <label
-                  htmlFor={inputId}
-                  className="flex items-start gap-3 cursor-pointer select-none"
-                >
-                  <input
-                    id={inputId}
-                    type="checkbox"
-                    checked={checked}
-                    onChange={(e) => setField(q.id, e.target.checked)}
-                    className="mt-1"
-                  />
-                  <span className="text-sm text-foreground/90">
-                    Выбираю, это обо мне
-                  </span>
-                </label>
+                <div className="flex flex-wrap gap-4">
+                  <label htmlFor={`${inputId}-yes`} className="flex items-center gap-2 text-sm text-foreground/90">
+                    <input
+                      id={`${inputId}-yes`}
+                      type="radio"
+                      name={inputId}
+                      checked={checked === true}
+                      onChange={() => setField(q.id, true)}
+                    />
+                    <span>Да</span>
+                  </label>
+                  <label htmlFor={`${inputId}-no`} className="flex items-center gap-2 text-sm text-foreground/90">
+                    <input
+                      id={`${inputId}-no`}
+                      type="radio"
+                      name={inputId}
+                      checked={checked === false}
+                      onChange={() => setField(q.id, false)}
+                    />
+                    <span>Нет</span>
+                  </label>
+                </div>
               </QuestionCard>
             );
           })}

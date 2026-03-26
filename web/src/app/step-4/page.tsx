@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { ProgressBar } from "@/components/ProgressBar";
 import { StepLayout } from "@/components/StepLayout";
+import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
 import { Step4Data, Step3Data, useFormStore } from "@/store/useFormStore";
 
 type SelectOption = { value: string; label: string };
@@ -37,17 +38,26 @@ function isStep4Complete(data: Step4Data): boolean {
 
 export default function Step4Page(): React.ReactElement {
   const router = useRouter();
+  const profileName = useFormStore((s) => s.profileName);
+  const personalDataConsent = useFormStore((s) => s.personalDataConsent);
+  const step1Data = useFormStore((s) => s.step1Data);
+  const step2Data = useFormStore((s) => s.step2Data);
   const step3Data = useFormStore((s) => s.step3Data);
   const step4Data = useFormStore((s) => s.step4Data);
   const setStep4Data = useFormStore((s) => s.setStep4Data);
 
   useEffect(() => {
+    if (!isProfileReady(profileName, personalDataConsent)) {
+      router.replace("/");
+      return;
+    }
     if (!isStep3Complete(step3Data)) {
       router.replace("/step-3");
     }
-  }, [router, step3Data]);
+  }, [personalDataConsent, profileName, router, step3Data]);
 
   const complete = isStep4Complete(step4Data);
+  const answeredCount = getAllAnsweredCount(step1Data, step2Data, step3Data, step4Data);
 
   const familyOptions: SelectOption[] = [
     { value: "single", label: "Холост/Не замужем" },
@@ -84,10 +94,11 @@ export default function Step4Page(): React.ReactElement {
     <StepLayout>
       <div className="mx-auto w-full max-w-3xl px-4 py-6">
         <div className="mb-5">
-          <ProgressBar totalSteps={4} activeStep={4} />
+          <ProgressBar answeredQuestions={answeredCount} totalQuestions={TOTAL_QUESTIONS_COUNT} />
         </div>
 
         <h1 className="text-xl sm:text-2xl font-bold mb-4 text-foreground">
+          {profileName.trim().length > 0 ? `${profileName}, ` : ""}
           Социальные якоря
         </h1>
 
