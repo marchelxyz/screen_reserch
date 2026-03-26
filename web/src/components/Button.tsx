@@ -14,7 +14,7 @@ function getVariantClasses(variant: ButtonVariant | undefined): string {
       return "rounded-full bg-transparent px-3 py-2 text-foreground/90 transition hover:bg-black/5 disabled:opacity-50 disabled:cursor-not-allowed";
     case "primary":
     default:
-      return "rounded-full bg-gradient-to-r from-[#00BFA5] to-[#00D4B8] px-5 py-3 text-white shadow-sm transition hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed";
+      return "rounded-[51px] bg-[#00B596] px-5 py-3 text-white transition hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed";
   }
 }
 
