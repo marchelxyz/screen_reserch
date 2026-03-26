@@ -1,0 +1,9 @@
+node_modules
+.next
+prisma/migrations
+.env
+.git
+.github
+npm-debug.log*
+Dockerfile
+
