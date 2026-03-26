@@ -42,7 +42,8 @@ export default function WelcomePage(): React.ReactElement {
           <div className="mt-6 text-center text-xs text-foreground/60">
             <div className="inline-flex items-center gap-2">
               <HelpCircle size={14} />
-              Нет "правильных" или "неправильных" ответов - важен ваш
+              Нет &quot;правильных&quot; или &quot;неправильных&quot; ответов -
+              важен ваш
               реальный профессиональный стиль.
             </div>
           </div>
