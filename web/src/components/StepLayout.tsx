@@ -1,9 +1,14 @@
+"use client";
+
 import React from "react";
 import Image from "next/image";
+import { TestExitControl } from "@/components/TestExitControl";
 
 export type StepLayoutProps = {
   children: React.ReactNode;
   hideHeaderTitle?: boolean;
+  /** Показать кнопку выхода из теста (шаги 1–4). */
+  showExitTest?: boolean;
 };
 
 /**
@@ -14,6 +19,7 @@ export type StepLayoutProps = {
 export function StepLayout({
   children,
   hideHeaderTitle = false,
+  showExitTest = false,
 }: StepLayoutProps): React.ReactElement {
   return (
     <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-[#F2F2F2]">
@@ -39,14 +45,17 @@ export function StepLayout({
             </h1>
           ) : null}
 
-          <div className="relative h-[72px] w-[72px] shrink-0">
-            <Image
-              src="/branding/faq-icon.svg"
-              alt="FAQ"
-              fill
-              sizes="72px"
-              className="object-contain"
-            />
+          <div className="flex shrink-0 items-start gap-2">
+            {showExitTest ? <TestExitControl /> : null}
+            <div className="relative h-[72px] w-[72px]">
+              <Image
+                src="/branding/faq-icon.svg"
+                alt="FAQ"
+                fill
+                sizes="72px"
+                className="object-contain"
+              />
+            </div>
           </div>
         </div>
       </header>

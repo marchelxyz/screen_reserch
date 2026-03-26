@@ -49,6 +49,7 @@ export default function FinishPage(): React.ReactElement {
   const submissionStatus = useFormStore((s) => s.submissionStatus);
   const submitError = useFormStore((s) => s.submitError);
   const submitData = useFormStore((s) => s.submitData);
+  const resetAfterTestFlow = useFormStore((s) => s.resetAfterTestFlow);
   const answeredCount = getAllAnsweredCount(step1Data, step2Data, step3Data, step4Data);
 
   useEffect(() => {
@@ -56,10 +57,10 @@ export default function FinishPage(): React.ReactElement {
       router.replace("/intro");
       return;
     }
-    if (!isStep4Complete(step4Data)) {
+    if (!isStep4Complete(step4Data) && submissionStatus !== "submitted") {
       router.replace("/step-4");
     }
-  }, [personalDataConsent, profileName, router, step4Data]);
+  }, [personalDataConsent, profileName, router, step4Data, submissionStatus]);
 
   useEffect(() => {
     if (submissionStatus === "idle") {
@@ -98,6 +99,21 @@ export default function FinishPage(): React.ReactElement {
             <div className="mt-7 flex justify-center">
               <Button onClick={() => void submitData()} className="w-full sm:w-auto px-10">
                 Повторить отправку
+              </Button>
+            </div>
+          ) : null}
+
+          {submissionStatus === "submitted" ? (
+            <div className="mt-8 flex justify-center">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  resetAfterTestFlow();
+                  router.push("/");
+                }}
+                className="px-10"
+              >
+                На главную
               </Button>
             </div>
           ) : null}

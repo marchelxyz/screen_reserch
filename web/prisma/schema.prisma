@@ -14,6 +14,10 @@ model ScreeningSubmission {
   id String @id @default(cuid())
   createdAt DateTime @default(now()) @map("created_at")
 
+  sessionId String @unique @map("session_id")
+  profileName String @map("profile_name")
+  personalDataConsent Boolean @map("personal_data_consent")
+
   step1Data Json @map("step1_data")
   step2Data Json @map("step2_data")
   step3Data Json @map("step3_data")
