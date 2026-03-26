@@ -20,7 +20,6 @@ export default function IntroPage(): React.ReactElement {
   const personalDataConsent = useFormStore((s) => s.personalDataConsent);
   const setProfileName = useFormStore((s) => s.setProfileName);
   const setPersonalDataConsent = useFormStore((s) => s.setPersonalDataConsent);
-  const beginTestSession = useFormStore((s) => s.beginTestSession);
   const consentRecordedAt = useFormStore((s) => s.consentRecordedAt);
   const canStart = isProfileReady(profileName, personalDataConsent, consentRecordedAt);
 
@@ -66,10 +65,7 @@ export default function IntroPage(): React.ReactElement {
               Назад
             </Button>
             <Button
-              onClick={() => {
-                beginTestSession();
-                router.push("/step-1");
-              }}
+              onClick={() => router.push("/briefing")}
               disabled={!canStart}
               className={`${stepNavPrimaryButtonClass} min-w-[220px] sm:min-w-[280px] text-[18px] sm:text-[22px]`}
             >

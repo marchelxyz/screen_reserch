@@ -4,17 +4,17 @@ import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { ProgressBar } from "@/components/ProgressBar";
-import { SessionHint } from "@/components/SessionHint";
 import { StepLayout } from "@/components/StepLayout";
+import { TestMotivation } from "@/components/TestMotivation";
 import {
+  questionCardSurfaceClass,
   stepInputClass,
   stepLabelClass,
   stepNavPrimaryButtonClass,
   stepPageContentClass,
-  stepSectionTitleClass,
-  stepSurfaceCardClass,
 } from "@/lib/stepPageTheme";
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
+import { getContinueButtonLabel } from "@/lib/testMotivation";
 import { Step4Data, Step3Data, useFormStore } from "@/store/useFormStore";
 
 type SelectOption = { value: string; label: string };
@@ -63,7 +63,7 @@ export default function Step4Page(): React.ReactElement {
       return;
     }
     if (!sessionId) {
-      router.replace("/intro");
+      router.replace("/briefing");
       return;
     }
     if (!isStep3Complete(step3Data)) {
@@ -73,6 +73,8 @@ export default function Step4Page(): React.ReactElement {
 
   const complete = isStep4Complete(step4Data);
   const answeredCount = getAllAnsweredCount(step1Data, step2Data, step3Data, step4Data);
+  const continueLabel = getContinueButtonLabel(answeredCount);
+  const primaryLabel = complete ? "Завершить" : continueLabel;
 
   const familyOptions: SelectOption[] = [
     { value: "single", label: "Холост/Не замужем" },
@@ -106,21 +108,14 @@ export default function Step4Page(): React.ReactElement {
   }
 
   return (
-    <StepLayout showExitTest>
+    <StepLayout>
       <div className={stepPageContentClass}>
-        <div className="mb-5">
+        <div className="mb-2">
           <ProgressBar answeredQuestions={answeredCount} totalQuestions={TOTAL_QUESTIONS_COUNT} />
-          <div className="mt-2">
-            <SessionHint sessionId={sessionId} />
-          </div>
+          <TestMotivation profileName={profileName} answeredCount={answeredCount} />
         </div>
 
-        <h1 className={stepSectionTitleClass}>
-          {profileName.trim().length > 0 ? `${profileName}, ` : ""}
-          Социальные якоря
-        </h1>
-
-        <div className={`${stepSurfaceCardClass} p-6 sm:px-8 sm:py-6`}>
+        <div className={`${questionCardSurfaceClass} p-6 sm:px-8 sm:py-6`}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className={stepLabelClass}>
@@ -234,11 +229,10 @@ export default function Step4Page(): React.ReactElement {
             onClick={() => router.push("/finish")}
             className={stepNavPrimaryButtonClass}
           >
-            Завершить
+            {primaryLabel}
           </Button>
         </div>
       </div>
     </StepLayout>
   );
 }
-

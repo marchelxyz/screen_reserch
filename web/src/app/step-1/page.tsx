@@ -1,20 +1,19 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { ProgressBar } from "@/components/ProgressBar";
 import { QuestionCard } from "@/components/QuestionCard";
-import { SessionHint } from "@/components/SessionHint";
 import { StepLayout } from "@/components/StepLayout";
+import { TestMotivation } from "@/components/TestMotivation";
 import {
   stepNavPrimaryButtonClass,
   stepPageContentClass,
-  stepSectionTitleClass,
 } from "@/lib/stepPageTheme";
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
+import { getContinueButtonLabel } from "@/lib/testMotivation";
 import { Step1Data, useFormStore } from "@/store/useFormStore";
-import { useEffect } from "react";
 
 type RadioOption = {
   value: string;
@@ -37,7 +36,6 @@ export default function Step1Page(): React.ReactElement {
   const personalDataConsent = useFormStore((s) => s.personalDataConsent);
   const consentRecordedAt = useFormStore((s) => s.consentRecordedAt);
   const sessionId = useFormStore((s) => s.sessionId);
-  const leaveTestSession = useFormStore((s) => s.leaveTestSession);
   const step1Data = useFormStore((s) => s.step1Data);
   const step2Data = useFormStore((s) => s.step2Data);
   const step3Data = useFormStore((s) => s.step3Data);
@@ -50,7 +48,7 @@ export default function Step1Page(): React.ReactElement {
       return;
     }
     if (!sessionId) {
-      router.replace("/intro");
+      router.replace("/briefing");
     }
   }, [consentRecordedAt, personalDataConsent, profileName, router, sessionId]);
 
@@ -104,25 +102,19 @@ export default function Step1Page(): React.ReactElement {
 
   const complete = isStep1Complete(step1Data);
   const answeredCount = getAllAnsweredCount(step1Data, step2Data, step3Data, step4Data);
+  const continueLabel = getContinueButtonLabel(answeredCount);
 
   function setField(field: Step1Question["id"], value: string): void {
     setStep1Data({ ...step1Data, [field]: value } as Step1Data);
   }
 
   return (
-    <StepLayout showExitTest>
+    <StepLayout>
       <div className={stepPageContentClass}>
-        <div className="mb-5">
+        <div className="mb-2">
           <ProgressBar answeredQuestions={answeredCount} totalQuestions={TOTAL_QUESTIONS_COUNT} />
-          <div className="mt-2">
-            <SessionHint sessionId={sessionId} />
-          </div>
+          <TestMotivation profileName={profileName} answeredCount={answeredCount} />
         </div>
-
-        <h1 className={stepSectionTitleClass}>
-          {profileName.trim().length > 0 ? `${profileName}, ` : ""}
-          IQ тест - Когнитивные способности
-        </h1>
 
         <div className="space-y-4">
           {questions.map((q) => (
@@ -135,7 +127,7 @@ export default function Step1Page(): React.ReactElement {
                     <label
                       key={opt.value}
                       htmlFor={inputId}
-                      className="flex items-start gap-3 cursor-pointer select-none"
+                      className="flex cursor-pointer select-none items-start gap-3"
                     >
                       <input
                         id={inputId}
@@ -158,10 +150,7 @@ export default function Step1Page(): React.ReactElement {
         <div className="mt-7 flex flex-wrap items-center justify-between gap-3">
           <Button
             variant="secondary"
-            onClick={() => {
-              leaveTestSession();
-              router.push("/");
-            }}
+            onClick={() => router.push("/briefing")}
             className="w-[160px]"
           >
             Назад
@@ -172,11 +161,10 @@ export default function Step1Page(): React.ReactElement {
             onClick={() => router.push("/step-2")}
             className={stepNavPrimaryButtonClass}
           >
-            Далее
+            {continueLabel}
           </Button>
         </div>
       </div>
     </StepLayout>
   );
 }
-

@@ -11,6 +11,10 @@ export const stepSectionTitleClass =
 export const stepSurfaceCardClass =
   "rounded-[34px] bg-[#DDDDDD] shadow-[0px_4px_75px_0px_rgba(0,0,0,0.20)]";
 
+/** Карточки вопросов: без тени, скругление по макету. */
+export const questionCardSurfaceClass =
+  "rounded-[41px] bg-[#DDDDDD] shadow-none";
+
 export const stepQuestionTitleClass =
   "text-[18px] sm:text-[20px] font-extrabold text-[#5F5E5E] leading-[1.35]";
 

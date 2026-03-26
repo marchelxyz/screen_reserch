@@ -1,8 +1,8 @@
 import React from "react";
 import {
+  questionCardSurfaceClass,
   stepQuestionTitleClass,
   stepSecondaryTextClass,
-  stepSurfaceCardClass,
 } from "@/lib/stepPageTheme";
 
 export type QuestionCardProps = {
@@ -17,7 +17,7 @@ export function QuestionCard({
   children,
 }: QuestionCardProps): React.ReactElement {
   return (
-    <section className={`${stepSurfaceCardClass} p-6 sm:px-8 sm:py-6`}>
+    <section className={`${questionCardSurfaceClass} p-6 sm:px-8 sm:py-6`}>
       <header className="mb-3">
         <h2 className={stepQuestionTitleClass}>{title}</h2>
         {description ? (
