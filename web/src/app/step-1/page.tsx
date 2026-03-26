@@ -6,7 +6,9 @@ import { Button } from "@/components/Button";
 import { ProgressBar } from "@/components/ProgressBar";
 import { QuestionCard } from "@/components/QuestionCard";
 import { StepLayout } from "@/components/StepLayout";
+import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
 import { Step1Data, useFormStore } from "@/store/useFormStore";
+import { useEffect } from "react";
 
 type RadioOption = {
   value: string;
@@ -25,8 +27,19 @@ function isStep1Complete(data: Step1Data): boolean {
 
 export default function Step1Page(): React.ReactElement {
   const router = useRouter();
+  const profileName = useFormStore((s) => s.profileName);
+  const personalDataConsent = useFormStore((s) => s.personalDataConsent);
   const step1Data = useFormStore((s) => s.step1Data);
+  const step2Data = useFormStore((s) => s.step2Data);
+  const step3Data = useFormStore((s) => s.step3Data);
+  const step4Data = useFormStore((s) => s.step4Data);
   const setStep1Data = useFormStore((s) => s.setStep1Data);
+
+  useEffect(() => {
+    if (!isProfileReady(profileName, personalDataConsent)) {
+      router.replace("/");
+    }
+  }, [personalDataConsent, profileName, router]);
 
   const questions: Step1Question[] = [
     {
@@ -77,6 +90,7 @@ export default function Step1Page(): React.ReactElement {
   ];
 
   const complete = isStep1Complete(step1Data);
+  const answeredCount = getAllAnsweredCount(step1Data, step2Data, step3Data, step4Data);
 
   function setField(field: Step1Question["id"], value: string): void {
     setStep1Data({ ...step1Data, [field]: value } as Step1Data);
@@ -86,10 +100,11 @@ export default function Step1Page(): React.ReactElement {
     <StepLayout>
       <div className="mx-auto w-full max-w-3xl px-4 py-6">
         <div className="mb-5">
-          <ProgressBar totalSteps={4} activeStep={1} />
+          <ProgressBar answeredQuestions={answeredCount} totalQuestions={TOTAL_QUESTIONS_COUNT} />
         </div>
 
         <h1 className="text-xl sm:text-2xl font-bold mb-4 text-foreground">
+          {profileName.trim().length > 0 ? `${profileName}, ` : ""}
           IQ тест - Когнитивные способности
         </h1>
 
