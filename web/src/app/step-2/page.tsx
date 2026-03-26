@@ -39,7 +39,6 @@ import {
   questionCardSurfaceClass,
   stepNavPrimaryButtonClass,
   stepPageContentClass,
-  stepQuestionTitleClass,
   stepSecondaryTextClass,
 } from "@/lib/stepPageTheme";
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
@@ -338,8 +337,7 @@ export default function Step2Page(): React.ReactElement {
         </div>
 
         <section className={`${questionCardSurfaceClass} mb-4 p-6 sm:px-8 sm:py-6`}>
-          <h2 className={stepQuestionTitleClass}>Опросник мотивации (Герчиков)</h2>
-          <div className={`mt-3 space-y-2 ${stepSecondaryTextClass}`}>
+          <div className={`space-y-2 ${stepSecondaryTextClass}`}>
             {GERCHIKOV_INTRO_PARAGRAPHS.map((line) => (
               <p key={line}>{line}</p>
             ))}
