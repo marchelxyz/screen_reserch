@@ -48,7 +48,7 @@ export default function FinishPage(): React.ReactElement {
 
   useEffect(() => {
     if (!isProfileReady(profileName, personalDataConsent)) {
-      router.replace("/");
+      router.replace("/intro");
       return;
     }
     if (!isStep4Complete(step4Data)) {

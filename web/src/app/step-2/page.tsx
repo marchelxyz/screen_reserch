@@ -40,7 +40,7 @@ export default function Step2Page(): React.ReactElement {
 
   useEffect(() => {
     if (!isProfileReady(profileName, personalDataConsent)) {
-      router.replace("/");
+      router.replace("/intro");
       return;
     }
     if (!isStep1Complete(step1Data)) {
