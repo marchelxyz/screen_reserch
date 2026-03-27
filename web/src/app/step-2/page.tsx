@@ -43,12 +43,9 @@ import {
 } from "@/lib/stepPageTheme";
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
 import { setScreeningMaxStepCookie } from "@/lib/screeningProgressCookie";
+import { isStep1Complete } from "@/lib/validation/stepCompletion";
 import { getContinueButtonLabel } from "@/lib/testMotivation";
-import { Step1Data, Step2Data, useFormStore } from "@/store/useFormStore";
-
-function isStep1Complete(data: Step1Data): boolean {
-  return Boolean(data.q1 && data.q2 && data.q3 && data.q4 && data.q5);
-}
+import { Step2Data, useFormStore } from "@/store/useFormStore";
 
 type Multi12Props = {
   heading: string;

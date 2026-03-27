@@ -1,3 +1,4 @@
+import { KOT_STEP_QUESTION_COUNT } from "@/lib/kot/step1Types";
 import { isGerchikovStep2Complete } from "@/lib/gerchikov/validation";
 import type {
   Step1Data,
@@ -7,7 +8,13 @@ import type {
 } from "@/store/useFormStore";
 
 export function isStep1Complete(data: Step1Data): boolean {
-  return Boolean(data.q1 && data.q2 && data.q3 && data.q4 && data.q5);
+  for (let i = 1; i <= KOT_STEP_QUESTION_COUNT; i += 1) {
+    const key = `q${String(i)}` as keyof Step1Data;
+    if (data[key] === null || data[key] === undefined) {
+      return false;
+    }
+  }
+  return true;
 }
 
 export function isStep3Complete(data: Step3Data): boolean {

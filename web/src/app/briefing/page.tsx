@@ -41,9 +41,9 @@ export default function BriefingPage(): React.ReactElement {
       <div className="flex flex-1 items-center justify-center px-4 pb-10 pt-2">
         <div className={`w-full max-w-[860px] px-8 py-8 ${stepSurfaceCardClass}`}>
           <p className={`text-[20px] sm:text-[22px] ${stepSecondaryTextClass}`}>
-            Перед вами серия коротких блоков с вопросами. Отвечайте так, как чувствуете
-            сейчас: здесь нет оценки «правильно или неправильно» — нам важен ваш
-            естественный стиль.
+            Сначала — короткий интеллектуальный блок (сокращённый тест в духе методики КОТ),
+            затем опрос о мотивации и ещё два шага. Дальнейшие блоки про стиль и самооценку:
+            там нет «правильных» ответов — важна ваша честность.
           </p>
           <p className={`mt-4 text-[20px] sm:text-[22px] ${stepSecondaryTextClass}`}>
             Вы сможете двигаться в своём темпе и вернуться назад в пределах опроса,
