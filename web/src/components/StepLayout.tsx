@@ -18,7 +18,7 @@ export function StepLayout({
   hideHeaderTitle = false,
 }: StepLayoutProps): React.ReactElement {
   return (
-    <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-[#F2F2F2]">
+    <div className="relative flex min-h-screen flex-col bg-[#F2F2F2]">
       <div className="pointer-events-none absolute right-[-70px] bottom-[-80px] h-[560px] w-[560px] rounded-full bg-[radial-gradient(circle,_rgba(0,181,150,0.92)_0%,_rgba(0,181,150,0.28)_55%,_rgba(0,181,150,0)_100%)] blur-[22px]" />
       <div className="pointer-events-none absolute left-[20px] top-[40px] h-[200px] w-[420px] bg-white/50 blur-[52px]" />
 
