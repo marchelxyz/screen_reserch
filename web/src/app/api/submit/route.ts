@@ -5,6 +5,16 @@ import {
   recordSuccessfulSubmit,
 } from "@/lib/api/submitRateLimit";
 import { verifyTurnstileToken } from "@/lib/api/verifyTurnstile";
+import { buildKotConclusionContext } from "@/lib/ai/buildKotConclusionContext";
+import { generateKotScreeningConclusion } from "@/lib/ai/kotConclusion";
+import { sendScreeningReportEmail } from "@/lib/email/sendScreeningReportEmail";
+import type { KotReportJson } from "@/lib/kot/kotReportTypes";
+import {
+  countKotRawScore,
+  estimateKotIq,
+  getKotIqNormNote,
+} from "@/lib/kot/kotScore";
+import { KOT_STEP_QUESTION_COUNT } from "@/lib/kot/step1Types";
 import { prisma } from "@/lib/prisma";
 import { isFullScreeningPayloadComplete } from "@/lib/validation/stepCompletion";
 import { submitApiBodySchema } from "@/lib/validation/submitPayloadSchema";
@@ -84,6 +94,56 @@ export async function POST(
     return jsonError("Invalid captcha", 400);
   }
 
+  const step1 = payload.step1Data as Step1Data;
+  const rawScore = countKotRawScore(step1);
+  const maxScore = KOT_STEP_QUESTION_COUNT;
+  const iqNormNote = getKotIqNormNote();
+  const estimatedIq = estimateKotIq(rawScore, maxScore);
+  const profileContext = buildKotConclusionContext(payload.profileName, payload.step4Data);
+
+  let conclusionText: string | null = null;
+  let conclusionGeneratedAt: string | null = null;
+  try {
+    conclusionText = await generateKotScreeningConclusion({
+      rawScore,
+      maxScore,
+      estimatedIq,
+      iqNormNote,
+      profileContext,
+    });
+    if (conclusionText !== null) {
+      conclusionGeneratedAt = new Date().toISOString();
+    }
+  } catch {
+    conclusionText = null;
+  }
+
+  let emailSent = false;
+  try {
+    emailSent = await sendScreeningReportEmail({
+      sessionId: payload.sessionId,
+      profileName: payload.profileName,
+      rawScore,
+      maxScore,
+      estimatedIq,
+      iqNormNote,
+      conclusionText,
+    });
+  } catch {
+    emailSent = false;
+  }
+
+  const kotReport: KotReportJson = {
+    version: 1,
+    rawScore,
+    maxScore,
+    estimatedIq,
+    iqNormNote,
+    conclusionText,
+    conclusionGeneratedAt,
+    emailSent,
+  };
+
   try {
     const consentAt = new Date(payload.consentRecordedAt);
     await prisma.screeningSubmission.upsert({
@@ -97,6 +157,7 @@ export async function POST(
         step2Data: payload.step2Data as Prisma.InputJsonValue,
         step3Data: payload.step3Data as Prisma.InputJsonValue,
         step4Data: payload.step4Data as Prisma.InputJsonValue,
+        kotReport: kotReport as unknown as Prisma.InputJsonValue,
       },
       update: {
         profileName: payload.profileName,
@@ -106,6 +167,7 @@ export async function POST(
         step2Data: payload.step2Data as Prisma.InputJsonValue,
         step3Data: payload.step3Data as Prisma.InputJsonValue,
         step4Data: payload.step4Data as Prisma.InputJsonValue,
+        kotReport: kotReport as unknown as Prisma.InputJsonValue,
       },
     });
     recordSuccessfulSubmit(clientIp);
