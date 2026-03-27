@@ -1,4 +1,6 @@
 import { z } from "zod";
+import type { ZodTypeAny } from "zod";
+import { KOT_STEP_QUESTION_COUNT } from "@/lib/kot/step1Types";
 
 const likertAnswerSchema = z.enum([
   "fully_agree",
@@ -8,15 +10,18 @@ const likertAnswerSchema = z.enum([
   "fully_disagree",
 ]);
 
-/** Шаг 1 — значения радиокнопок из UI. */
+const kotChoiceSchema = z.enum(["1", "2", "3", "4"]);
+
+/** Шаг 1 — КОТ (сокращённо), по одному варианту «1»…«4» на каждый из 30 пунктов. */
 export const step1DataSchema = z
-  .object({
-    q1: z.enum(["easy", "medium", "hard"]),
-    q2: z.enum(["often", "sometimes", "rarely"]),
-    q3: z.enum(["yes", "depends", "no"]),
-    q4: z.enum(["usually", "mixed", "rare"]),
-    q5: z.enum(["strong", "ok", "weak"]),
-  })
+  .object(
+    Object.fromEntries(
+      Array.from({ length: KOT_STEP_QUESTION_COUNT }, (_, i) => [
+        `q${String(i + 1)}`,
+        kotChoiceSchema,
+      ])
+    ) as Record<string, ZodTypeAny>
+  )
   .strict();
 
 const incomeImportanceSchema = z.enum(["very", "somewhat", "not_at_all"]);

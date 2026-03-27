@@ -1,35 +1,32 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { ProgressBar } from "@/components/ProgressBar";
 import { QuestionCard } from "@/components/QuestionCard";
 import { StepLayout } from "@/components/StepLayout";
 import { TestMotivation } from "@/components/TestMotivation";
+import { KOT_QUESTIONS } from "@/lib/kot/questions";
+import type { KotChoiceId, KotQuestionKey } from "@/lib/kot/step1Types";
 import {
+  questionCardSurfaceClass,
   stepNavPrimaryButtonClass,
   stepPageContentClass,
+  stepQuestionTitleClass,
+  stepSecondaryTextClass,
 } from "@/lib/stepPageTheme";
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
 import { setScreeningMaxStepCookie } from "@/lib/screeningProgressCookie";
 import { getContinueButtonLabel } from "@/lib/testMotivation";
-import { Step1Data, useFormStore } from "@/store/useFormStore";
+import { isStep1Complete } from "@/lib/validation/stepCompletion";
+import { useFormStore } from "@/store/useFormStore";
 
-type RadioOption = {
-  value: string;
-  label: string;
-};
-
-type Step1Question = {
-  id: keyof Pick<Step1Data, "q1" | "q2" | "q3" | "q4" | "q5">;
-  title: string;
-  options: RadioOption[];
-};
-
-function isStep1Complete(data: Step1Data): boolean {
-  return Boolean(data.q1 && data.q2 && data.q3 && data.q4 && data.q5);
-}
+const KOT_INTRO_PARAGRAPHS: string[] = [
+  "Перед вами сокращённый блок в духе методики КОТ (краткий ориентировочный тест) и теста Вандерлика (Wonderlic): аналогии, числовые задачи, смысл высказываний, ряды и логика.",
+  "В оригинале таких заданий 50; здесь — 30, чтобы сохранить структуру опроса без чрезмерной длины. Выберите один ответ в каждом пункте.",
+  "Формулировки подобраны для экранного прохождения и не являются дословной копией издания методики.",
+];
 
 export default function Step1Page(): React.ReactElement {
   const router = useRouter();
@@ -42,6 +39,16 @@ export default function Step1Page(): React.ReactElement {
   const step3Data = useFormStore((s) => s.step3Data);
   const step4Data = useFormStore((s) => s.step4Data);
   const setStep1Data = useFormStore((s) => s.setStep1Data);
+
+  const questionsBySection = useMemo(() => {
+    const map = new Map<string, typeof KOT_QUESTIONS>();
+    for (const q of KOT_QUESTIONS) {
+      const list = map.get(q.section) ?? [];
+      list.push(q);
+      map.set(q.section, list);
+    }
+    return Array.from(map.entries());
+  }, []);
 
   useEffect(() => {
     if (!isProfileReady(profileName, personalDataConsent, consentRecordedAt)) {
@@ -57,60 +64,12 @@ export default function Step1Page(): React.ReactElement {
     setScreeningMaxStepCookie(1);
   }, []);
 
-  const questions: Step1Question[] = [
-    {
-      id: "q1",
-      title: "Насколько легко вам даются логические задачи?",
-      options: [
-        { value: "easy", label: "Легко" },
-        { value: "medium", label: "Средне" },
-        { value: "hard", label: "Сложно" },
-      ],
-    },
-    {
-      id: "q2",
-      title: "Вы быстро находите закономерности в данных?",
-      options: [
-        { value: "often", label: "Часто" },
-        { value: "sometimes", label: "Иногда" },
-        { value: "rarely", label: "Редко" },
-      ],
-    },
-    {
-      id: "q3",
-      title: "Вам нравится разбирать причины проблем?",
-      options: [
-        { value: "yes", label: "Да, нравится" },
-        { value: "depends", label: "Иногда" },
-        { value: "no", label: "Нет" },
-      ],
-    },
-    {
-      id: "q4",
-      title: "Вы сохраняете спокойствие при сложных сценариях?",
-      options: [
-        { value: "usually", label: "Обычно" },
-        { value: "mixed", label: "По-разному" },
-        { value: "rare", label: "С трудом" },
-      ],
-    },
-    {
-      id: "q5",
-      title: "Вы умеете структурировать информацию перед решением?",
-      options: [
-        { value: "strong", label: "Хорошо" },
-        { value: "ok", label: "Нормально" },
-        { value: "weak", label: "Пока трудно" },
-      ],
-    },
-  ];
-
   const complete = isStep1Complete(step1Data);
   const answeredCount = getAllAnsweredCount(step1Data, step2Data, step3Data, step4Data);
   const continueLabel = getContinueButtonLabel(answeredCount);
 
-  function setField(field: Step1Question["id"], value: string): void {
-    setStep1Data({ ...step1Data, [field]: value } as Step1Data);
+  function setChoice(key: KotQuestionKey, value: KotChoiceId): void {
+    setStep1Data({ ...step1Data, [key]: value });
   }
 
   return (
@@ -121,34 +80,56 @@ export default function Step1Page(): React.ReactElement {
           <TestMotivation profileName={profileName} answeredCount={answeredCount} />
         </div>
 
-        <div className="space-y-4">
-          {questions.map((q) => (
-            <QuestionCard key={q.id} title={q.title}>
-              <div className="space-y-2">
-                {q.options.map((opt) => {
-                  const inputId = `step1-${q.id}-${opt.value}`;
-                  const checked = step1Data[q.id] === opt.value;
+        <section className={`${questionCardSurfaceClass} mb-4 p-6 sm:px-8 sm:py-6`}>
+          <h2 className={stepQuestionTitleClass}>Интеллектуальный блок (сокращённый КОТ)</h2>
+          <div className={`mt-3 space-y-2 ${stepSecondaryTextClass}`}>
+            {KOT_INTRO_PARAGRAPHS.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+        </section>
+
+        <div className="space-y-6">
+          {questionsBySection.map(([section, items]) => (
+            <div key={section}>
+              <p className="mb-3 text-[15px] font-extrabold uppercase tracking-wide text-[#8C8C8C]">
+                {section}
+              </p>
+              <div className="space-y-4">
+                {items.map((q) => {
+                  const globalIndex = KOT_QUESTIONS.indexOf(q) + 1;
+                  const title = `${String(globalIndex)}. ${q.prompt}`;
                   return (
-                    <label
-                      key={opt.value}
-                      htmlFor={inputId}
-                      className="flex cursor-pointer select-none items-start gap-3"
-                    >
-                      <input
-                        id={inputId}
-                        type="radio"
-                        name={q.id}
-                        value={opt.value}
-                        checked={checked}
-                        onChange={() => setField(q.id, opt.value)}
-                        className="mt-1"
-                      />
-                      <span>{opt.label}</span>
-                    </label>
+                    <QuestionCard key={q.key} title={title}>
+                      <div className="space-y-2">
+                        {q.options.map((opt) => {
+                          const inputId = `kot-${q.key}-${opt.id}`;
+                          const checked = step1Data[q.key] === opt.id;
+                          return (
+                            <label
+                              key={opt.id}
+                              htmlFor={inputId}
+                              className="flex cursor-pointer select-none items-start gap-3"
+                            >
+                              <input
+                                id={inputId}
+                                type="radio"
+                                name={q.key}
+                                value={opt.id}
+                                checked={checked}
+                                onChange={() => setChoice(q.key, opt.id)}
+                                className="mt-1 accent-[#00B596]"
+                              />
+                              <span>{opt.label}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </QuestionCard>
                   );
                 })}
               </div>
-            </QuestionCard>
+            </div>
           ))}
         </div>
 

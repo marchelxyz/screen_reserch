@@ -3,16 +3,12 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { GerchikovStep2Data } from "@/lib/gerchikov/step2Types";
+import { createEmptyKotStep1Data, type KotStep1Data } from "@/lib/kot/step1Types";
 import { isFullScreeningPayloadComplete } from "@/lib/validation/stepCompletion";
 import { generateSessionId } from "@/lib/sessionId";
 
-export type Step1Data = {
-  q1: string | null;
-  q2: string | null;
-  q3: string | null;
-  q4: string | null;
-  q5: string | null;
-};
+/** Шаг 1: сокращённый КОТ (30 вопросов, варианты «1»–«4»). */
+export type Step1Data = KotStep1Data;
 
 /** Опросник мотивации (методика Герчикова), шаг 2. */
 export type Step2Data = GerchikovStep2Data;
@@ -102,13 +98,7 @@ type FormStore = {
   submitData: () => Promise<void>;
 };
 
-const defaultStep1Data: Step1Data = {
-  q1: null,
-  q2: null,
-  q3: null,
-  q4: null,
-  q5: null,
-};
+const defaultStep1Data: Step1Data = createEmptyKotStep1Data();
 
 const defaultStep2Data: Step2Data = {
   q1: [],
@@ -340,7 +330,7 @@ export const useFormStore = create<FormStore>()(
       },
     }),
     {
-      name: "profile-uspese-form-v4-gerchikov",
+      name: "profile-uspese-form-v6-kot-step1",
       partialize: (state) => ({
         sessionId: state.sessionId,
         profileName: state.profileName,

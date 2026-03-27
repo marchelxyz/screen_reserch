@@ -8,6 +8,7 @@ import { verifyTurnstileToken } from "@/lib/api/verifyTurnstile";
 import { prisma } from "@/lib/prisma";
 import { isFullScreeningPayloadComplete } from "@/lib/validation/stepCompletion";
 import { submitApiBodySchema } from "@/lib/validation/submitPayloadSchema";
+import type { Step1Data } from "@/store/useFormStore";
 import { Prisma } from "@/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -63,7 +64,7 @@ export async function POST(
 
   if (
     !isFullScreeningPayloadComplete(
-      payload.step1Data,
+      payload.step1Data as Step1Data,
       payload.step2Data,
       payload.step3Data,
       payload.step4Data

@@ -1,12 +1,19 @@
 import { getGerchikovStep2AnsweredCount } from "@/lib/gerchikov/validation";
+import { KOT_STEP_QUESTION_COUNT } from "@/lib/kot/step1Types";
 import { Step1Data, Step2Data, Step3Data, Step4Data } from "@/store/useFormStore";
 
-/** 5 (шаг 1) + 23 (Герчиков) + 10 (шаг 3) + 6 (шаг 4). */
-export const TOTAL_QUESTIONS_COUNT = 44;
+/** 30 (КОТ, сокр.) + 23 (Герчиков) + 10 (шаг 3) + 6 (шаг 4). */
+export const TOTAL_QUESTIONS_COUNT = 69;
 
 export function getStep1AnsweredCount(data: Step1Data): number {
-  const values = [data.q1, data.q2, data.q3, data.q4, data.q5];
-  return values.filter(Boolean).length;
+  let n = 0;
+  for (let i = 1; i <= KOT_STEP_QUESTION_COUNT; i += 1) {
+    const key = `q${String(i)}` as keyof Step1Data;
+    if (data[key] !== null && data[key] !== undefined) {
+      n += 1;
+    }
+  }
+  return n;
 }
 
 export function getStep2AnsweredCount(data: Step2Data): number {
