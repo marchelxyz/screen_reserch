@@ -192,11 +192,11 @@ function matchByQuestionKey(key: KotQuestionKey, raw: string): boolean {
     case "q41":
       return n === "3";
     case "q42":
-      return n === "14";
+      return n === "3";
     case "q43":
       return matchQ43(raw);
     case "q44":
-      return n === "800";
+      return n === "1";
     case "q45":
       return matchFractionEquals(raw, 1 / 10);
     case "q46":
@@ -208,7 +208,7 @@ function matchByQuestionKey(key: KotQuestionKey, raw: string): boolean {
     case "q49":
       return n === "3";
     case "q50":
-      return n === "17";
+      return n === "3";
     default: {
       const _exhaustive: never = key;
       return _exhaustive;

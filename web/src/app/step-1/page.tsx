@@ -8,6 +8,7 @@ import { QuestionCard } from "@/components/QuestionCard";
 import { StepLayout } from "@/components/StepLayout";
 import { TestMotivation } from "@/components/TestMotivation";
 import { useScreeningStepLog } from "@/lib/logging/useScreeningStepLog";
+import { KotQuestionFigure } from "@/components/kot/KotQuestionFigures";
 import { KOT_OFFICIAL_QUESTIONS_ORDERED } from "@/lib/kot/kotOfficial50Questions";
 import type { KotQuestionKey } from "@/lib/kot/step1Types";
 import {
@@ -26,7 +27,7 @@ import { useFormStore } from "@/store/useFormStore";
 const KOT_INTRO_PARAGRAPHS: string[] = [
   "Краткий ориентировочный тест (КОТ, Бузин / Вандерлик): 50 заданий по учебному пособию (Пашукова и др., 1996).",
   "Рекомендуемое время по методичке — 15 минут. Отвечайте на столько пунктов, на сколько успеваете; не задерживайтесь долго на одном задании.",
-  "Порядок заданий как в бланке: с 1 по 50. Часть пунктов требует бланка с рисунками из методички.",
+  "Порядок заданий как в бланке: с 1 по 50. Задания с чертежами (17, 29, 32, 50) показаны схематично на экране.",
 ];
 
 export default function Step1Page(): React.ReactElement {
@@ -85,9 +86,12 @@ export default function Step1Page(): React.ReactElement {
           {KOT_OFFICIAL_QUESTIONS_ORDERED.map((spec, index) => {
             const displayNum = index + 1;
             const title = `${String(displayNum)}. ${spec.prompt}`;
+            const figure =
+              spec.figure !== undefined ? <KotQuestionFigure kind={spec.figure} /> : null;
             if (spec.kind === "mc") {
               return (
                 <QuestionCard key={spec.key} title={title}>
+                  {figure}
                   <div className="space-y-2">
                     {spec.options.map((opt) => {
                       const inputId = `kot-${spec.key}-${opt.id}`;
@@ -118,6 +122,7 @@ export default function Step1Page(): React.ReactElement {
             const textVal = step1Data[spec.key] ?? "";
             return (
               <QuestionCard key={spec.key} title={title}>
+                {figure}
                 <label className="block">
                   <span className={`mb-1 block text-sm ${stepSecondaryTextClass}`}>
                     {spec.placeholder ?? "Ответ"}
