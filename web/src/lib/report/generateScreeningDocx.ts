@@ -17,6 +17,7 @@ import { KOT_QUESTIONS } from "@/lib/kot/questions";
 import { buildGerchikovReportRows } from "@/lib/gerchikov/gerchikovReportRows";
 import {
   computeGerchikovMotivationScores,
+  getGerchikovMotivationChartLegendRu,
   type GerchikovMotivationKey,
 } from "@/lib/gerchikov/gerchikovMotivationProfile";
 import { renderGerchikovMotivationChartPng } from "@/lib/report/gerchikovMotivationChartPng";
@@ -119,6 +120,14 @@ export async function generateScreeningDocxBuffer(input: ScreeningDocxInput): Pr
           type: "png",
           data: motPng,
           transformation: { width: 620, height: 276 },
+        }),
+      ],
+    }),
+    new Paragraph({
+      children: [
+        new TextRun({
+          italics: true,
+          text: `Расшифровка подписей на диаграмме (латинские коды из-за ограничений растеризации SVG): ${getGerchikovMotivationChartLegendRu()}`,
         }),
       ],
     }),
