@@ -4,18 +4,14 @@ import {
   isSubmitRateLimitExceeded,
   recordSuccessfulSubmit,
 } from "@/lib/api/submitRateLimit";
-import { buildKotConclusionContext } from "@/lib/ai/buildKotConclusionContext";
-import { generateKotScreeningConclusion } from "@/lib/ai/kotConclusion";
+import { buildScreeningConclusionContext } from "@/lib/ai/buildScreeningConclusionContext";
+import { generateScreeningConclusion } from "@/lib/ai/kotConclusion";
 import {
   sendScreeningReportEmail,
   smtpErrorLogFields,
 } from "@/lib/email/sendScreeningReportEmail";
 import type { KotReportJson } from "@/lib/kot/kotReportTypes";
-import {
-  countKotRawScore,
-  estimateKotIq,
-  getKotIqNormNote,
-} from "@/lib/kot/kotScore";
+import { countKotRawScore, getKotIqNormNote, getKotOfficialIq } from "@/lib/kot/kotScore";
 import { KOT_STEP_QUESTION_COUNT } from "@/lib/kot/step1Types";
 import { maskClientIp } from "@/lib/logging/maskClientIp";
 import { screeningServerLog, zodIssuesForLog } from "@/lib/logging/screeningServerLog";
@@ -23,6 +19,7 @@ import { shortSessionRef } from "@/lib/logging/screeningSessionRef";
 import { prisma } from "@/lib/prisma";
 import { isFullScreeningPayloadComplete } from "@/lib/validation/stepCompletion";
 import { submitApiBodySchema } from "@/lib/validation/submitPayloadSchema";
+import { generateScreeningDocxBuffer } from "@/lib/report/generateScreeningDocx";
 import type { Step1Data } from "@/store/useFormStore";
 import { Prisma } from "@/generated/prisma/client";
 
@@ -121,28 +118,36 @@ export async function POST(
   const rawScore = countKotRawScore(step1);
   const maxScore = KOT_STEP_QUESTION_COUNT;
   const iqNormNote = getKotIqNormNote();
-  const estimatedIq = estimateKotIq(rawScore, maxScore);
-  const profileContext = buildKotConclusionContext(payload.profileName, payload.step4Data);
+  const kotOfficialIq = getKotOfficialIq(rawScore, maxScore);
+  const screeningContext = buildScreeningConclusionContext({
+    rawScore,
+    maxScore,
+    kotOfficialIq,
+    iqNormNote,
+    profileName: payload.profileName,
+    step2: payload.step2Data,
+    step3: payload.step3Data,
+    step4: payload.step4Data,
+  });
 
   screeningServerLog("submit", "kot_scored", {
     sessionRef,
     rawScore,
     maxScore,
-    estimatedIq,
+    kotOfficialIq,
   });
 
   let conclusionText: string | null = null;
+  let hiringRecommendations: string | null = null;
   let conclusionGeneratedAt: string | null = null;
   const aiStarted = Date.now();
   try {
-    conclusionText = await generateKotScreeningConclusion({
-      rawScore,
-      maxScore,
-      estimatedIq,
-      iqNormNote,
-      profileContext,
+    const aiResult = await generateScreeningConclusion({
+      screeningContext,
       sessionRef,
     });
+    conclusionText = aiResult.conclusion;
+    hiringRecommendations = aiResult.hiringRecommendations;
     if (conclusionText !== null) {
       conclusionGeneratedAt = new Date().toISOString();
     }
@@ -150,6 +155,7 @@ export async function POST(
       sessionRef,
       ok: conclusionText !== null,
       conclusionChars: conclusionText?.length ?? 0,
+      hiringChars: hiringRecommendations?.length ?? 0,
       durationMs: Date.now() - aiStarted,
     });
   } catch (err) {
@@ -159,6 +165,38 @@ export async function POST(
       errorName: err instanceof Error ? err.name : "unknown",
     });
     conclusionText = null;
+    hiringRecommendations = null;
+  }
+
+  let reportDocxBuffer: Buffer | null = null;
+  const docxStarted = Date.now();
+  try {
+    reportDocxBuffer = await generateScreeningDocxBuffer({
+      profileName: payload.profileName,
+      sessionId: payload.sessionId,
+      rawScore,
+      maxScore,
+      kotOfficialIq,
+      iqNormNote,
+      step1: step1,
+      step2: payload.step2Data,
+      step3: payload.step3Data,
+      step4: payload.step4Data,
+      conclusionText,
+      hiringRecommendations,
+    });
+    screeningServerLog("submit", "docx_ok", {
+      sessionRef,
+      bytes: reportDocxBuffer.length,
+      durationMs: Date.now() - docxStarted,
+    });
+  } catch (err) {
+    screeningServerLog("submit", "docx_failed", {
+      sessionRef,
+      durationMs: Date.now() - docxStarted,
+      errorName: err instanceof Error ? err.name : "unknown",
+    });
+    reportDocxBuffer = null;
   }
 
   const emailStarted = Date.now();
@@ -169,9 +207,11 @@ export async function POST(
       profileName: payload.profileName,
       rawScore,
       maxScore,
-      estimatedIq,
+      kotOfficialIq,
       iqNormNote,
       conclusionText,
+      hiringRecommendations,
+      reportDocxBuffer,
       sessionRef,
     });
     screeningServerLog("submit", "email_finished", {
@@ -192,14 +232,16 @@ export async function POST(
   }
 
   const kotReport: KotReportJson = {
-    version: 1,
+    version: 2,
     rawScore,
     maxScore,
-    estimatedIq,
+    kotOfficialIq,
     iqNormNote,
     conclusionText,
+    hiringRecommendations,
     conclusionGeneratedAt,
     emailSent,
+    docxAttached: reportDocxBuffer !== null,
   };
 
   const dbStarted = Date.now();

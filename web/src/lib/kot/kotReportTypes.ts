@@ -2,15 +2,17 @@
  * Сохраняемый в БД результат автоподсчёта КОТ и заключения (LLM).
  */
 export type KotReportJson = {
-  version: 1;
+  version: 2;
   rawScore: number;
   maxScore: number;
-  /** Ориентировочный IQ по линейной шкале 70–130 для сокращённой батареи; не заменяет официальные нормы КОТ. */
-  estimatedIq: number;
+  /** IQ по таблице норм КОТ (см. `kotOfficialNorms.ts`). */
+  kotOfficialIq: number;
   iqNormNote: string;
   conclusionText: string | null;
-  /** ISO 8601 (UTC), если заключение сгенерировано. */
+  hiringRecommendations: string | null;
   conclusionGeneratedAt: string | null;
   /** Успешная отправка письма на адреса из REPORT_RECIPIENT_EMAILS. */
   emailSent: boolean;
+  /** Вложение Word сформировано и приложено к письму. */
+  docxAttached: boolean;
 };
