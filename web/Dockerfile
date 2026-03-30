@@ -18,6 +18,9 @@ RUN npm run build
 
 FROM node:20-alpine AS runner
 
+# Prisma CLI / engines ищут libssl в Alpine; без пакета prisma migrate deploy может падать и ронять весь старт (502).
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 ENV NODE_ENV=production
 
