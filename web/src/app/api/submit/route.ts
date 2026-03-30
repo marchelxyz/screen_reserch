@@ -4,7 +4,6 @@ import {
   isSubmitRateLimitExceeded,
   recordSuccessfulSubmit,
 } from "@/lib/api/submitRateLimit";
-import { verifyTurnstileToken } from "@/lib/api/verifyTurnstile";
 import { buildKotConclusionContext } from "@/lib/ai/buildKotConclusionContext";
 import { generateKotScreeningConclusion } from "@/lib/ai/kotConclusion";
 import { sendScreeningReportEmail } from "@/lib/email/sendScreeningReportEmail";
@@ -88,7 +87,6 @@ export async function POST(
 
   screeningServerLog("submit", "request_accepted", {
     sessionRef,
-    hasTurnstileToken: Boolean(payload.turnstileToken && payload.turnstileToken.length > 0),
   });
 
   if (!payload.personalDataConsent) {
@@ -114,11 +112,6 @@ export async function POST(
   if (isSubmitRateLimitExceeded(clientIp)) {
     screeningServerLog("submit", "rate_limited", { sessionRef, ipMasked });
     return jsonError("Too Many Requests", 429);
-  }
-
-  const turnstileOk = await verifyTurnstileToken(payload.turnstileToken, sessionRef);
-  if (!turnstileOk) {
-    return jsonError("Invalid captcha", 400);
   }
 
   const step1 = payload.step1Data as Step1Data;
