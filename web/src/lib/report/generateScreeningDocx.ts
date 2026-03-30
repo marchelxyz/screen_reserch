@@ -156,6 +156,15 @@ export async function generateScreeningDocxBuffer(input: ScreeningDocxInput): Pr
         }),
       ],
     }),
+    new Paragraph({
+      children: [
+        new TextRun({
+          italics: true,
+          text:
+            "Диаграмма без текстовых подписей на изображении (ограничение растеризации SVG на сервере). Ось Y: снизу вверх баллы Ликерта 1–5; ось X: десять пунктов шага 3 слева направо (п. 1–10, соответствуют строкам таблицы ниже). Сетка: пять горизонтальных уровней = шкала 1–5.",
+        }),
+      ],
+    }),
     buildStep3Table(input.step3),
     new Paragraph({ text: "" }),
 
