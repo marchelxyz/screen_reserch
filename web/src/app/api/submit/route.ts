@@ -15,6 +15,9 @@ import {
   getKotIqNormNote,
 } from "@/lib/kot/kotScore";
 import { KOT_STEP_QUESTION_COUNT } from "@/lib/kot/step1Types";
+import { maskClientIp } from "@/lib/logging/maskClientIp";
+import { screeningServerLog, zodIssuesForLog } from "@/lib/logging/screeningServerLog";
+import { shortSessionRef } from "@/lib/logging/screeningSessionRef";
 import { prisma } from "@/lib/prisma";
 import { isFullScreeningPayloadComplete } from "@/lib/validation/stepCompletion";
 import { submitApiBodySchema } from "@/lib/validation/submitPayloadSchema";
@@ -49,26 +52,47 @@ export function PATCH(): NextResponse<{ error: string }> {
 
 /**
  * Принимает ответы кандидата и сохраняет по session_id (upsert).
- * Не логирует тело запроса и не отдаёт клиенту внутренние тексты ошибок.
+ * Логирует этапы без тела анкеты и без персональных данных (см. SECURITY.md).
  */
 export async function POST(
   req: NextRequest
 ): Promise<NextResponse<{ ok: true } | { error: string }>> {
+  const startedAt = Date.now();
+
   let jsonBody: unknown;
   try {
     jsonBody = await req.json();
   } catch {
+    screeningServerLog("submit", "json_parse_failed", { sessionRef: "unknown" });
     return jsonError("Invalid JSON", 400);
   }
 
   const parsed = submitApiBodySchema.safeParse(jsonBody);
   if (!parsed.success) {
+    const sessionHint =
+      typeof jsonBody === "object" &&
+      jsonBody !== null &&
+      "sessionId" in jsonBody &&
+      typeof (jsonBody as { sessionId?: unknown }).sessionId === "string"
+        ? shortSessionRef((jsonBody as { sessionId: string }).sessionId)
+        : "unknown";
+    screeningServerLog("submit", "validation_failed", {
+      sessionRef: sessionHint,
+      issues: JSON.stringify(zodIssuesForLog(parsed.error)),
+    });
     return jsonError("Invalid request body", 400);
   }
 
   const payload = parsed.data;
+  const sessionRef = shortSessionRef(payload.sessionId);
+
+  screeningServerLog("submit", "request_accepted", {
+    sessionRef,
+    hasTurnstileToken: Boolean(payload.turnstileToken && payload.turnstileToken.length > 0),
+  });
 
   if (!payload.personalDataConsent) {
+    screeningServerLog("submit", "consent_false", { sessionRef });
     return jsonError("Invalid request body", 400);
   }
 
@@ -80,16 +104,19 @@ export async function POST(
       payload.step4Data
     )
   ) {
+    screeningServerLog("submit", "payload_incomplete", { sessionRef });
     return jsonError("Incomplete payload", 400);
   }
 
   const clientIp = getClientIp(req);
+  const ipMasked = maskClientIp(clientIp);
 
   if (isSubmitRateLimitExceeded(clientIp)) {
+    screeningServerLog("submit", "rate_limited", { sessionRef, ipMasked });
     return jsonError("Too Many Requests", 429);
   }
 
-  const turnstileOk = await verifyTurnstileToken(payload.turnstileToken);
+  const turnstileOk = await verifyTurnstileToken(payload.turnstileToken, sessionRef);
   if (!turnstileOk) {
     return jsonError("Invalid captcha", 400);
   }
@@ -101,8 +128,16 @@ export async function POST(
   const estimatedIq = estimateKotIq(rawScore, maxScore);
   const profileContext = buildKotConclusionContext(payload.profileName, payload.step4Data);
 
+  screeningServerLog("submit", "kot_scored", {
+    sessionRef,
+    rawScore,
+    maxScore,
+    estimatedIq,
+  });
+
   let conclusionText: string | null = null;
   let conclusionGeneratedAt: string | null = null;
+  const aiStarted = Date.now();
   try {
     conclusionText = await generateKotScreeningConclusion({
       rawScore,
@@ -110,14 +145,27 @@ export async function POST(
       estimatedIq,
       iqNormNote,
       profileContext,
+      sessionRef,
     });
     if (conclusionText !== null) {
       conclusionGeneratedAt = new Date().toISOString();
     }
-  } catch {
+    screeningServerLog("submit", "ai_conclusion_finished", {
+      sessionRef,
+      ok: conclusionText !== null,
+      conclusionChars: conclusionText?.length ?? 0,
+      durationMs: Date.now() - aiStarted,
+    });
+  } catch (err) {
+    screeningServerLog("submit", "ai_conclusion_exception", {
+      sessionRef,
+      durationMs: Date.now() - aiStarted,
+      errorName: err instanceof Error ? err.name : "unknown",
+    });
     conclusionText = null;
   }
 
+  const emailStarted = Date.now();
   let emailSent = false;
   try {
     emailSent = await sendScreeningReportEmail({
@@ -128,8 +176,19 @@ export async function POST(
       estimatedIq,
       iqNormNote,
       conclusionText,
+      sessionRef,
     });
-  } catch {
+    screeningServerLog("submit", "email_finished", {
+      sessionRef,
+      sent: emailSent,
+      durationMs: Date.now() - emailStarted,
+    });
+  } catch (err) {
+    screeningServerLog("submit", "email_exception", {
+      sessionRef,
+      durationMs: Date.now() - emailStarted,
+      errorName: err instanceof Error ? err.name : "unknown",
+    });
     emailSent = false;
   }
 
@@ -144,6 +203,7 @@ export async function POST(
     emailSent,
   };
 
+  const dbStarted = Date.now();
   try {
     const consentAt = new Date(payload.consentRecordedAt);
     await prisma.screeningSubmission.upsert({
@@ -171,9 +231,24 @@ export async function POST(
       },
     });
     recordSuccessfulSubmit(clientIp);
-  } catch {
+    screeningServerLog("submit", "db_upsert_ok", {
+      sessionRef,
+      durationMs: Date.now() - dbStarted,
+      ipMasked,
+    });
+  } catch (err) {
+    screeningServerLog("submit", "db_upsert_failed", {
+      sessionRef,
+      durationMs: Date.now() - dbStarted,
+      errorName: err instanceof Error ? err.name : "unknown",
+    });
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
+
+  screeningServerLog("submit", "success", {
+    sessionRef,
+    totalDurationMs: Date.now() - startedAt,
+  });
 
   return NextResponse.json({ ok: true }, { status: 200 });
 }

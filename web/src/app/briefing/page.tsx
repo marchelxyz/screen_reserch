@@ -9,6 +9,7 @@ import {
   stepSecondaryTextClass,
   stepSurfaceCardClass,
 } from "@/lib/stepPageTheme";
+import { useScreeningStepLog } from "@/lib/logging/useScreeningStepLog";
 import { isProfileReady } from "@/lib/progress";
 import { useFormStore } from "@/store/useFormStore";
 
@@ -17,10 +18,11 @@ import { useFormStore } from "@/store/useFormStore";
  */
 export default function BriefingPage(): React.ReactElement {
   const router = useRouter();
+  const sessionId = useFormStore((s) => s.sessionId);
+  useScreeningStepLog("briefing", sessionId);
   const profileName = useFormStore((s) => s.profileName);
   const personalDataConsent = useFormStore((s) => s.personalDataConsent);
   const consentRecordedAt = useFormStore((s) => s.consentRecordedAt);
-  const sessionId = useFormStore((s) => s.sessionId);
   const beginTestSession = useFormStore((s) => s.beginTestSession);
 
   useEffect(() => {

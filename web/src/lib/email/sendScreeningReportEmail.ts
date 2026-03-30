@@ -1,9 +1,12 @@
 import nodemailer from "nodemailer";
 
+import { screeningServerLog } from "@/lib/logging/screeningServerLog";
 import { escapeHtmlForPdf } from "@/lib/pdf/escapeHtml";
 
 export type ScreeningReportEmailPayload = {
   sessionId: string;
+  /** Для логов, без ПДн. */
+  sessionRef: string;
   profileName: string;
   rawScore: number;
   maxScore: number;
@@ -37,12 +40,18 @@ export async function sendScreeningReportEmail(
   payload: ScreeningReportEmailPayload
 ): Promise<boolean> {
   const recipients = parseRecipientEmailsFromEnv();
-  if (recipients.length === 0 || !isSmtpConfigured()) {
+  if (recipients.length === 0) {
+    screeningServerLog("email", "skipped_no_recipients", { sessionRef: payload.sessionRef });
+    return false;
+  }
+  if (!isSmtpConfigured()) {
+    screeningServerLog("email", "skipped_no_smtp", { sessionRef: payload.sessionRef });
     return false;
   }
 
   const from = process.env.EMAIL_FROM?.trim() || process.env.SMTP_USER?.trim();
   if (!from) {
+    screeningServerLog("email", "skipped_no_from", { sessionRef: payload.sessionRef });
     return false;
   }
 
@@ -58,6 +67,13 @@ export async function sendScreeningReportEmail(
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
+  });
+
+  screeningServerLog("email", "send_start", {
+    sessionRef: payload.sessionRef,
+    recipientCount: recipients.length,
+    port,
+    secure,
   });
 
   const safeName = escapeHtmlForPdf(payload.profileName);
@@ -93,12 +109,27 @@ export async function sendScreeningReportEmail(
     payload.conclusionText ?? "(не сгенерировано)",
   ];
 
-  await transporter.sendMail({
-    from,
-    to: recipients,
-    subject: `Профиль Успеха: анкета (${payload.profileName})`,
-    text: textLines.join("\n"),
-    html,
+  const sendStarted = Date.now();
+  try {
+    await transporter.sendMail({
+      from,
+      to: recipients,
+      subject: `Профиль Успеха: анкета (${payload.profileName})`,
+      text: textLines.join("\n"),
+      html,
+    });
+  } catch (err) {
+    screeningServerLog("email", "send_failed", {
+      sessionRef: payload.sessionRef,
+      durationMs: Date.now() - sendStarted,
+      errorName: err instanceof Error ? err.name : "unknown",
+    });
+    throw err;
+  }
+
+  screeningServerLog("email", "send_ok", {
+    sessionRef: payload.sessionRef,
+    durationMs: Date.now() - sendStarted,
   });
 
   return true;

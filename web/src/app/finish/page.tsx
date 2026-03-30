@@ -10,6 +10,7 @@ import {
   stepSecondaryTextClass,
   stepSurfaceCardClass,
 } from "@/lib/stepPageTheme";
+import { useScreeningStepLog } from "@/lib/logging/useScreeningStepLog";
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
 import { isStep4Complete } from "@/lib/validation/stepCompletion";
 import { SubmissionStatus, useFormStore } from "@/store/useFormStore";
@@ -40,6 +41,8 @@ function getFinishMessage(profileName: string): string {
 
 export default function FinishPage(): React.ReactElement {
   const router = useRouter();
+  const sessionId = useFormStore((s) => s.sessionId);
+  useScreeningStepLog("finish", sessionId);
   const profileName = useFormStore((s) => s.profileName);
   const personalDataConsent = useFormStore((s) => s.personalDataConsent);
   const consentRecordedAt = useFormStore((s) => s.consentRecordedAt);
