@@ -10,6 +10,8 @@
  *
  * Раньше в Docker не копировались prisma/ и prisma.config.ts, поэтому migrate deploy
  * вообще нельзя было вызывать в production.
+ * В .dockerignore не должно быть prisma/migrations — иначе в образе пустая папка и P3005.
+ * Ошибка migrate deploy не должна ронять контейнер: схему уже поднимает create_tables.sql.
  */
 
 import { execSync } from "node:child_process";
@@ -26,8 +28,7 @@ async function main() {
   console.log("[db:setup] bootstrap SQL (scripts/create_tables.sql)…");
   await runBootstrapSql(databaseUrl);
 
-  console.log("[db:setup] prisma migrate deploy…");
-  runPrismaMigrateDeploy();
+  runPrismaMigrateOptional();
 
   console.log("[db:setup] done.");
 }
@@ -49,14 +50,50 @@ async function runBootstrapSql(databaseUrl) {
 }
 
 /**
- * Применяет неприменённые миграции Prisma (нужны каталог prisma/ и prisma.config.ts в образе).
+ * Проверяет, что в образе есть хотя бы одна миграция (в .dockerignore не должно быть prisma/migrations).
  */
-function runPrismaMigrateDeploy() {
-  execSync("npx prisma migrate deploy", {
-    cwd: process.cwd(),
-    env: process.env,
-    stdio: "inherit",
-  });
+function hasPrismaMigrationFiles() {
+  const migrationsDir = path.join(process.cwd(), "prisma", "migrations");
+  if (!fs.existsSync(migrationsDir)) {
+    return false;
+  }
+  const entries = fs.readdirSync(migrationsDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+    const sqlPath = path.join(migrationsDir, entry.name, "migration.sql");
+    if (fs.existsSync(sqlPath)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Пытается применить prisma migrate deploy. Не падает: при пустых миграциях или P3005 приложение всё равно стартует.
+ */
+function runPrismaMigrateOptional() {
+  if (!hasPrismaMigrationFiles()) {
+    console.warn(
+      "[db:setup] в prisma/migrations нет migration.sql — пропускаем prisma migrate deploy (схема из create_tables.sql)."
+    );
+    return;
+  }
+  console.log("[db:setup] prisma migrate deploy…");
+  try {
+    execSync("npx prisma migrate deploy", {
+      cwd: process.cwd(),
+      env: process.env,
+      stdio: "inherit",
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(
+      "[db:setup] prisma migrate deploy не удался — продолжаем старт (схема уже применена bootstrap SQL).",
+      msg
+    );
+  }
 }
 
 try {

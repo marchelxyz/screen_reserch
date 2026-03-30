@@ -1,6 +1,6 @@
 node_modules
 .next
-prisma/migrations
+# НЕ исключать prisma/migrations — иначе в образе пусто, migrate deploy / P3005.
 .env
 .git
 .github
