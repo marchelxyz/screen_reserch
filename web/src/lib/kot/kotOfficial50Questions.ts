@@ -5,34 +5,45 @@ export type KotMcOption = {
   readonly label: string;
 };
 
+/** Встроенная SVG-схема к заданию (см. `KotQuestionFigure`). */
+export type KotFigureSlot = "q17" | "q29" | "q32" | "q50";
+
 export type KotOfficialSpec =
   | {
       readonly key: KotQuestionKey;
       readonly kind: "mc";
       readonly prompt: string;
       readonly options: readonly KotMcOption[];
+      readonly figure?: KotFigureSlot;
     }
   | {
       readonly key: KotQuestionKey;
       readonly kind: "text";
       readonly prompt: string;
       readonly placeholder?: string;
+      readonly figure?: KotFigureSlot;
     };
 
 function mc(
   key: KotQuestionKey,
   prompt: string,
-  options: readonly KotMcOption[]
+  options: readonly KotMcOption[],
+  figure?: KotFigureSlot
 ): KotOfficialSpec {
-  return { key, kind: "mc", prompt, options };
+  return figure !== undefined
+    ? { key, kind: "mc", prompt, options, figure }
+    : { key, kind: "mc", prompt, options };
 }
 
 function text(
   key: KotQuestionKey,
   prompt: string,
-  placeholder?: string
+  placeholder?: string,
+  figure?: KotFigureSlot
 ): KotOfficialSpec {
-  return { key, kind: "text", prompt, placeholder };
+  return figure !== undefined
+    ? { key, kind: "text", prompt, placeholder, figure }
+    : { key, kind: "text", prompt, placeholder };
 }
 
 /**
@@ -134,13 +145,18 @@ export const KOT_OFFICIAL_QUESTIONS_ORDERED: readonly KotOfficialSpec[] = [
     "Расставьте предлагаемые ниже слова в таком порядке, чтобы получилось правильное предложение. В качестве ответа запишите две последние буквы последнего слова.\nодни ухода они гостей после наконец остались",
     "две буквы"
   ),
-  mc("q17", "Какой из приведённых ниже пяти рисунков наиболее отличен от других? (Нужен бланк с рисунками из методички.)", [
-    { id: "1", label: "1" },
-    { id: "2", label: "2" },
-    { id: "3", label: "3" },
-    { id: "4", label: "4" },
-    { id: "5", label: "5" },
-  ]),
+  mc(
+    "q17",
+    "Какой из приведённых ниже пяти рисунков наиболее отличен от других?",
+    [
+      { id: "1", label: "1" },
+      { id: "2", label: "2" },
+      { id: "3", label: "3" },
+      { id: "4", label: "4" },
+      { id: "5", label: "5" },
+    ],
+    "q17"
+  ),
   text(
     "q18",
     "Два рыбака поймали 36 рыб. Первый поймал в 8 раз больше, чем второй. Сколько поймал второй?",
@@ -194,8 +210,9 @@ export const KOT_OFFICIAL_QUESTIONS_ORDERED: readonly KotOfficialSpec[] = [
   ]),
   text(
     "q29",
-    "Разделите эту геометрическую фигуру прямой линией на две части так, чтобы, сложив их вместе, можно было получить квадрат. (Нужен бланк с рисунком из методички.)",
-    "например: 2-13"
+    "Разделите эту геометрическую фигуру прямой линией на две части так, чтобы, сложив их вместе, можно было получить квадрат.",
+    "например: 2-13",
+    "q29"
   ),
   mc("q30", "Предположим, что первые два утверждения верны. Тогда последнее будет:\nСаша поздоровался с Машей.\nМаша поздоровалась с Дашей.\nСаша не поздоровался с Дашей.", [
     { id: "1", label: "верно" },
@@ -209,8 +226,9 @@ export const KOT_OFFICIAL_QUESTIONS_ORDERED: readonly KotOfficialSpec[] = [
   ),
   text(
     "q32",
-    "Три из пяти фигур нужно соединить таким образом, чтобы получилась равнобедренная трапеция. (Номера фигур по бланку с рисунками из методички.)",
-    "например: 1,2,4"
+    "Три из пяти фигур нужно соединить таким образом, чтобы получилась равнобедренная трапеция.",
+    "например: 1,2,4",
+    "q32"
   ),
   text(
     "q33",
@@ -259,21 +277,21 @@ export const KOT_OFFICIAL_QUESTIONS_ORDERED: readonly KotOfficialSpec[] = [
     { id: "4", label: "4" },
     { id: "5", label: "5" },
   ]),
-  text(
-    "q42",
-    "«Отражаемый» и «воображаемый». Эти слова являются:\n1 — сходными, 2 — противоположными, 3 — ни сходными, ни противоположными.",
-    "введите номер варианта или ответ по бланку"
-  ),
+  mc("q42", "«Отражаемый» и «воображаемый». Эти слова являются:", [
+    { id: "1", label: "сходными" },
+    { id: "2", label: "противоположными" },
+    { id: "3", label: "ни сходными, ни противоположными" },
+  ]),
   text(
     "q43",
     "Сколько соток составляет участок длиною 70 м и шириной 20 м?",
     "число"
   ),
-  text(
-    "q44",
-    "Следующие две фразы по значению:\n1 — сходны, 2 — противоположны, 3 — ни сходны, ни противоположны.\nХорошие вещи дешёвы, плохие дороги.\nХорошее качество обеспечивается простотой, плохое — сложностью.",
-    "ответ"
-  ),
+  mc("q44", "Следующие две фразы по значению:\nХорошие вещи дешёвы, плохие дороги.\nХорошее качество обеспечивается простотой, плохое — сложностью.", [
+    { id: "1", label: "сходны" },
+    { id: "2", label: "противоположны" },
+    { id: "3", label: "ни сходны, ни противоположны" },
+  ]),
   text(
     "q45",
     "Солдат, стреляя в цель, поразил её в 12,5 % случаев. Сколько раз солдат должен выстрелить, чтобы поразить её сто раз?",
@@ -299,10 +317,17 @@ export const KOT_OFFICIAL_QUESTIONS_ORDERED: readonly KotOfficialSpec[] = [
     { id: "2", label: "противоположно" },
     { id: "3", label: "ни сходно, ни противоположно" },
   ]),
-  text(
+  mc(
     "q50",
-    "Какая из этих фигур наиболее отлична от других? (По бланку методички с рисунками; введите обозначение ответа, например номер фигуры.)",
-    "ответ"
+    "Какая из этих фигур наиболее отлична от других?",
+    [
+      { id: "1", label: "1" },
+      { id: "2", label: "2" },
+      { id: "3", label: "3" },
+      { id: "4", label: "4" },
+      { id: "5", label: "5" },
+    ],
+    "q50"
   ),
 ];
 
