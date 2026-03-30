@@ -50,7 +50,7 @@ export async function renderStep3LikertChartPng(data: Step3Data): Promise<Buffer
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${String(W)}" height="${String(H)}">
   <rect width="100%" height="100%" fill="#ffffff"/>
-  <text x="${String(PAD_L)}" y="20" font-size="14" fill="#333333">Шаг 3: шкала ответов (1–5 по Ликерту)</text>
+  <text x="${String(PAD_L)}" y="20" font-size="14" fill="#333333" font-family="DejaVu Sans, Liberation Sans, Arial, sans-serif">Step 3: Likert scale (1-5)</text>
   ${[1, 2, 3, 4, 5]
     .map((lvl) => {
       const y = PAD_T + innerH - ((lvl - 1) / 4) * innerH;
