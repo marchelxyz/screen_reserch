@@ -1,5 +1,6 @@
--- SQL-скрипт для автоматического создания таблиц Postgres.
--- Используется на старте деплоя (Railway / Timeweb) до первого запуска приложения.
+-- Идемпотентный bootstrap для Postgres: вызывается из scripts/setupDb.mjs до prisma migrate deploy.
+-- Должен соответствовать web/prisma/schema.prisma (модель ScreeningSubmission).
+-- CREATE TABLE IF NOT EXISTS не добавляет колонки в уже существующую таблицу — ниже блоки ALTER … IF NOT EXISTS.
 
 CREATE TABLE IF NOT EXISTS screening_submission (
   id TEXT PRIMARY KEY,

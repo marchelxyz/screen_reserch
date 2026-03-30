@@ -1,3 +1,4 @@
+-- Устарело как отдельный ручной шаг: то же есть в create_tables.sql + prisma migrate deploy (setupDb.mjs).
 -- Однократная миграция: время фиксации согласия с политикой (юридический учёт).
 
 ALTER TABLE screening_submission

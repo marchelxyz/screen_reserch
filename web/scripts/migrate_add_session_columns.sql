@@ -1,5 +1,5 @@
+-- Устарело как отдельный ручной шаг: то же есть в create_tables.sql + prisma migrate deploy (setupDb.mjs).
 -- Миграция для уже существующей таблицы screening_submission без полей сессии.
--- Выполните один раз на стенде, где таблица создана старой версией create_tables.sql.
 
 ALTER TABLE screening_submission ADD COLUMN IF NOT EXISTS session_id TEXT;
 ALTER TABLE screening_submission ADD COLUMN IF NOT EXISTS profile_name TEXT;
