@@ -9,6 +9,13 @@ import {
   type KotQuestionKey,
   type KotStep1Data,
 } from "@/lib/kot/step1Types";
+import { clientSessionRef, screeningClientLog } from "@/lib/logging/screeningClientLog";
+import {
+  getStep1AnsweredCount,
+  getStep2AnsweredCount,
+  getStep3AnsweredCount,
+  getStep4AnsweredCount,
+} from "@/lib/progress";
 import { isFullScreeningPayloadComplete } from "@/lib/validation/stepCompletion";
 import { generateSessionId } from "@/lib/sessionId";
 
@@ -221,6 +228,9 @@ export const useFormStore = create<FormStore>()(
 
       beginTestSession: () => {
         const sessionId = generateSessionId();
+        screeningClientLog("session_begin", {
+          sessionRef: clientSessionRef(sessionId) ?? "none",
+        });
         set({
           sessionId,
           kotShuffleOrder: seededShuffleKotKeys(sessionId),
@@ -233,7 +243,11 @@ export const useFormStore = create<FormStore>()(
 
       closeSessionAfterSubmit: () => set({ sessionId: null }),
 
-      leaveTestSession: () =>
+      leaveTestSession: () => {
+        const prevId = get().sessionId;
+        screeningClientLog("session_leave", {
+          sessionRef: clientSessionRef(prevId) ?? "none",
+        });
         set({
           sessionId: null,
           kotShuffleOrder: null,
@@ -241,9 +255,14 @@ export const useFormStore = create<FormStore>()(
           submissionStatus: "idle",
           submitError: null,
           turnstileToken: null,
-        }),
+        });
+      },
 
-      resetAfterTestFlow: () =>
+      resetAfterTestFlow: () => {
+        const prevId = get().sessionId;
+        screeningClientLog("session_reset_after_flow", {
+          sessionRef: clientSessionRef(prevId) ?? "none",
+        });
         set({
           sessionId: null,
           kotShuffleOrder: null,
@@ -251,18 +270,25 @@ export const useFormStore = create<FormStore>()(
           submissionStatus: "idle",
           submitError: null,
           turnstileToken: null,
-        }),
+        });
+      },
 
       submitData: async () => {
         const state = get();
+        const sessionRef = clientSessionRef(state.sessionId) ?? "none";
         if (
           state.submissionStatus === "submitting" ||
           state.submissionStatus === "submitted"
         ) {
+          screeningClientLog("submit_skipped_already_final", {
+            sessionRef,
+            status: state.submissionStatus,
+          });
           return;
         }
 
         if (!state.sessionId) {
+          screeningClientLog("submit_blocked_no_session", { sessionRef: "none" });
           set({
             submissionStatus: "error",
             submitError: "Сессия не найдена. Начните тест с экрана ввода имени.",
@@ -274,6 +300,7 @@ export const useFormStore = create<FormStore>()(
           !state.consentRecordedAt ||
           state.consentRecordedAt.trim().length === 0
         ) {
+          screeningClientLog("submit_blocked_no_consent", { sessionRef });
           set({
             submissionStatus: "error",
             submitError:
@@ -290,6 +317,13 @@ export const useFormStore = create<FormStore>()(
             state.step4Data
           )
         ) {
+          screeningClientLog("submit_blocked_incomplete", {
+            sessionRef,
+            step1Answered: getStep1AnsweredCount(state.step1Data),
+            step2Answered: getStep2AnsweredCount(state.step2Data),
+            step3Answered: getStep3AnsweredCount(state.step3Data),
+            step4Answered: getStep4AnsweredCount(state.step4Data),
+          });
           set({
             submissionStatus: "error",
             submitError: "Анкета заполнена не полностью.",
@@ -302,6 +336,7 @@ export const useFormStore = create<FormStore>()(
             ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
             : undefined;
         if (siteKey && siteKey.length > 0 && !state.turnstileToken) {
+          screeningClientLog("submit_blocked_captcha", { sessionRef });
           set({
             submissionStatus: "error",
             submitError: "Пройдите проверку «Я не робот» на шаге 4.",
@@ -325,11 +360,31 @@ export const useFormStore = create<FormStore>()(
             : {}),
         };
 
+        screeningClientLog("submit_fetch_start", {
+          sessionRef,
+          hasTurnstileToken: Boolean(state.turnstileToken),
+        });
+
+        const fetchStarted =
+          typeof performance !== "undefined" ? performance.now() : Date.now();
+
         try {
           const response = await fetch("/api/submit", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
+          });
+
+          const durationMs =
+            typeof performance !== "undefined"
+              ? Math.round(performance.now() - fetchStarted)
+              : 0;
+
+          screeningClientLog("submit_fetch_done", {
+            sessionRef,
+            httpStatus: response.status,
+            ok: response.ok,
+            durationMs,
           });
 
           if (!response.ok) {
@@ -342,15 +397,24 @@ export const useFormStore = create<FormStore>()(
             } catch {
               /* игнорируем невалидный JSON */
             }
+            screeningClientLog("submit_server_error", {
+              sessionRef,
+              httpStatus: response.status,
+            });
             throw new Error(message);
           }
 
+          screeningClientLog("submit_success_client", { sessionRef, durationMs });
           set({ submissionStatus: "submitted" });
           get().clearSensitiveFormData();
           get().closeSessionAfterSubmit();
         } catch (error) {
           const message =
             error instanceof Error ? error.message : "Неизвестная ошибка";
+          screeningClientLog("submit_client_exception", {
+            sessionRef,
+            errorName: error instanceof Error ? error.name : "unknown",
+          });
           set({ submissionStatus: "error", submitError: message });
         }
       },

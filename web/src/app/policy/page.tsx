@@ -1,5 +1,8 @@
+"use client";
+
 import React from "react";
 import { StepLayout } from "@/components/StepLayout";
+import { useScreeningStepLog } from "@/lib/logging/useScreeningStepLog";
 import {
   stepPageContentClass,
   stepSecondaryTextClass,
@@ -7,6 +10,8 @@ import {
 } from "@/lib/stepPageTheme";
 
 export default function PolicyPage(): React.ReactElement {
+  useScreeningStepLog("policy", null);
+
   return (
     <StepLayout hideHeaderTitle>
       <div className={stepPageContentClass}>
@@ -24,4 +29,3 @@ export default function PolicyPage(): React.ReactElement {
     </StepLayout>
   );
 }
-

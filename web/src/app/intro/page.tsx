@@ -11,11 +11,14 @@ import {
   stepSecondaryTextClass,
   stepSurfaceCardClass,
 } from "@/lib/stepPageTheme";
+import { useScreeningStepLog } from "@/lib/logging/useScreeningStepLog";
 import { isProfileReady } from "@/lib/progress";
 import { useFormStore } from "@/store/useFormStore";
 
 export default function IntroPage(): React.ReactElement {
   const router = useRouter();
+  const sessionId = useFormStore((s) => s.sessionId);
+  useScreeningStepLog("intro", sessionId);
   const profileName = useFormStore((s) => s.profileName);
   const personalDataConsent = useFormStore((s) => s.personalDataConsent);
   const setProfileName = useFormStore((s) => s.setProfileName);

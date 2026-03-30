@@ -1,3 +1,6 @@
+import { maskClientIp } from "@/lib/logging/maskClientIp";
+import { screeningServerLog } from "@/lib/logging/screeningServerLog";
+
 /**
  * In-memory учёт успешных отправок анкеты по IP (POST /api/submit).
  * Не более {@link MAX_SUBMITS_PER_HOUR} за скользящий час на один IP.
@@ -52,4 +55,9 @@ export function recordSuccessfulSubmit(clientIp: string): void {
   const bucket = _getBucket(clientIp);
   bucket.timestamps = _pruneOld(now, bucket.timestamps);
   bucket.timestamps.push(now);
+  screeningServerLog("rate_limit", "success_recorded", {
+    ipMasked: maskClientIp(clientIp),
+    countInWindow: bucket.timestamps.length,
+    maxPerHour: MAX_SUBMITS_PER_HOUR,
+  });
 }

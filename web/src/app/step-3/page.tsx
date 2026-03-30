@@ -7,6 +7,7 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { QuestionCard } from "@/components/QuestionCard";
 import { StepLayout } from "@/components/StepLayout";
 import { TestMotivation } from "@/components/TestMotivation";
+import { useScreeningStepLog } from "@/lib/logging/useScreeningStepLog";
 import {
   stepNavPrimaryButtonClass,
   stepPageContentClass,
@@ -48,6 +49,7 @@ export default function Step3Page(): React.ReactElement {
   const personalDataConsent = useFormStore((s) => s.personalDataConsent);
   const consentRecordedAt = useFormStore((s) => s.consentRecordedAt);
   const sessionId = useFormStore((s) => s.sessionId);
+  useScreeningStepLog("step-3", sessionId);
   const step1Data = useFormStore((s) => s.step1Data);
   const step2Data = useFormStore((s) => s.step2Data);
   const step3Data = useFormStore((s) => s.step3Data);

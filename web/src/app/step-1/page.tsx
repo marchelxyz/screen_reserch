@@ -7,6 +7,7 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { QuestionCard } from "@/components/QuestionCard";
 import { StepLayout } from "@/components/StepLayout";
 import { TestMotivation } from "@/components/TestMotivation";
+import { useScreeningStepLog } from "@/lib/logging/useScreeningStepLog";
 import { seededShuffleKotKeys } from "@/lib/kot/kotShuffle";
 import { KOT_QUESTIONS_BY_KEY } from "@/lib/kot/questions";
 import type { KotChoiceId, KotQuestionKey } from "@/lib/kot/step1Types";
@@ -36,6 +37,7 @@ export default function Step1Page(): React.ReactElement {
   const personalDataConsent = useFormStore((s) => s.personalDataConsent);
   const consentRecordedAt = useFormStore((s) => s.consentRecordedAt);
   const sessionId = useFormStore((s) => s.sessionId);
+  useScreeningStepLog("step-1", sessionId);
   const kotShuffleOrder = useFormStore((s) => s.kotShuffleOrder);
   const setKotShuffleOrder = useFormStore((s) => s.setKotShuffleOrder);
   const step1Data = useFormStore((s) => s.step1Data);

@@ -4,9 +4,13 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { StepLayout } from "@/components/StepLayout";
+import { useScreeningStepLog } from "@/lib/logging/useScreeningStepLog";
+import { useFormStore } from "@/store/useFormStore";
 
 export default function WelcomePage(): React.ReactElement {
   const router = useRouter();
+  const sessionId = useFormStore((s) => s.sessionId);
+  useScreeningStepLog("welcome", sessionId);
 
   return (
     <StepLayout>

@@ -15,6 +15,8 @@ import {
   stepPageContentClass,
   stepSecondaryTextClass,
 } from "@/lib/stepPageTheme";
+import { clientSessionRef, screeningClientLog } from "@/lib/logging/screeningClientLog";
+import { useScreeningStepLog } from "@/lib/logging/useScreeningStepLog";
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
 import { setScreeningMaxStepCookie } from "@/lib/screeningProgressCookie";
 import { getContinueButtonLabel } from "@/lib/testMotivation";
@@ -44,6 +46,7 @@ export default function Step4Page(): React.ReactElement {
   const personalDataConsent = useFormStore((s) => s.personalDataConsent);
   const consentRecordedAt = useFormStore((s) => s.consentRecordedAt);
   const sessionId = useFormStore((s) => s.sessionId);
+  useScreeningStepLog("step-4", sessionId);
   const step1Data = useFormStore((s) => s.step1Data);
   const step2Data = useFormStore((s) => s.step2Data);
   const step3Data = useFormStore((s) => s.step3Data);
@@ -270,9 +273,24 @@ export default function Step4Page(): React.ReactElement {
             <div className="mt-6 flex justify-center">
               <Turnstile
                 siteKey={turnstileSiteKey}
-                onSuccess={(token) => setTurnstileToken(token)}
-                onExpire={() => setTurnstileToken(null)}
-                onError={() => setTurnstileToken(null)}
+                onSuccess={(token) => {
+                  screeningClientLog("turnstile_client_success", {
+                    sessionRef: clientSessionRef(sessionId) ?? "none",
+                  });
+                  setTurnstileToken(token);
+                }}
+                onExpire={() => {
+                  screeningClientLog("turnstile_client_expire", {
+                    sessionRef: clientSessionRef(sessionId) ?? "none",
+                  });
+                  setTurnstileToken(null);
+                }}
+                onError={() => {
+                  screeningClientLog("turnstile_client_error", {
+                    sessionRef: clientSessionRef(sessionId) ?? "none",
+                  });
+                  setTurnstileToken(null);
+                }}
               />
             </div>
           ) : (

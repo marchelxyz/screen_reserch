@@ -35,6 +35,7 @@ import {
   toggleOptionIdWithMax,
 } from "@/lib/gerchikov/toggleOptionIds";
 import { isGerchikovStep2Complete } from "@/lib/gerchikov/validation";
+import { useScreeningStepLog } from "@/lib/logging/useScreeningStepLog";
 import {
   questionCardSurfaceClass,
   stepNavPrimaryButtonClass,
@@ -290,6 +291,7 @@ export default function Step2Page(): React.ReactElement {
   const personalDataConsent = useFormStore((s) => s.personalDataConsent);
   const consentRecordedAt = useFormStore((s) => s.consentRecordedAt);
   const sessionId = useFormStore((s) => s.sessionId);
+  useScreeningStepLog("step-2", sessionId);
   const step1Data = useFormStore((s) => s.step1Data);
   const step2Data = useFormStore((s) => s.step2Data);
   const step3Data = useFormStore((s) => s.step3Data);

@@ -24,6 +24,17 @@ export function middleware(request: NextRequest): NextResponse {
   const raw = request.cookies.get(SCREENING_MAX_STEP_COOKIE)?.value;
   const unlocked = raw ? Number.parseInt(raw, 10) : 0;
   if (Number.isNaN(unlocked) || unlocked < required) {
+    console.log(
+      JSON.stringify({
+        ts: new Date().toISOString(),
+        scope: "screening",
+        phase: "middleware",
+        message: "step_gated_redirect",
+        path: request.nextUrl.pathname,
+        requiredStep: required,
+        maxStepCookie: unlocked,
+      })
+    );
     return NextResponse.redirect(new URL("/", request.url));
   }
 
