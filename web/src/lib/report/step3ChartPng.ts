@@ -8,11 +8,13 @@ const W = 640;
 const H = 260;
 const PAD_L = 48;
 const PAD_R = 24;
-const PAD_T = 24;
-const PAD_B = 44;
+const PAD_T = 28;
+const PAD_B = 36;
 
 /**
- * Строит простой линейный график ответов шага 3 (1–5) и возвращает PNG-буфер для вставки в Word.
+ * Линейный график ответов шага 3 (балл 1–5) → PNG для Word.
+ * В SVG нет текстовых элементов: при растеризации (Sharp/librsvg) без шрифтов даже цифры и «Q1» отображаются квадратиками.
+ * Подписи осей и заголовок — в документе Word под рисунком.
  */
 export async function renderStep3LikertChartPng(data: Step3Data): Promise<Buffer> {
   const keys: (keyof Step3Data)[] = [
@@ -47,24 +49,28 @@ export async function renderStep3LikertChartPng(data: Step3Data): Promise<Buffer
   }
   const polylinePoints = points.join(" ");
 
-  const svg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${String(W)}" height="${String(H)}">
-  <rect width="100%" height="100%" fill="#ffffff"/>
-  <text x="${String(PAD_L)}" y="20" font-size="14" fill="#333333" font-family="DejaVu Sans, Liberation Sans, Arial, sans-serif">Step 3: Likert scale (1-5)</text>
-  ${[1, 2, 3, 4, 5]
+  const gridLines = [1, 2, 3, 4, 5]
     .map((lvl) => {
       const y = PAD_T + innerH - ((lvl - 1) / 4) * innerH;
-      return `<line x1="${String(PAD_L - 6)}" y1="${String(y)}" x2="${String(W - PAD_R)}" y2="${String(y)}" stroke="#dddddd" stroke-width="1"/>`;
+      return `<line x1="${String(PAD_L)}" y1="${String(y)}" x2="${String(W - PAD_R)}" y2="${String(y)}" stroke="#e8e8e8" stroke-width="1"/>`;
     })
-    .join("\n  ")}
-  ${[1, 2, 3, 4, 5]
+    .join("\n  ");
+
+  const yTicks = [1, 2, 3, 4, 5]
     .map((lvl) => {
       const y = PAD_T + innerH - ((lvl - 1) / 4) * innerH;
-      return `<text x="8" y="${String(y + 4)}" font-size="11" fill="#666666">${String(lvl)}</text>`;
+      return `<line x1="${String(PAD_L - 5)}" y1="${String(y)}" x2="${String(PAD_L)}" y2="${String(y)}" stroke="#999999" stroke-width="1.5"/>`;
     })
-    .join("\n  ")}
-  <polyline fill="none" stroke="#00B596" stroke-width="2.5" points="${polylinePoints}" />
-  ${values
+    .join("\n  ");
+
+  const xTicks = keys
+    .map((_, i) => {
+      const x = PAD_L + i * stepX;
+      return `<line x1="${String(x)}" y1="${String(PAD_T + innerH)}" x2="${String(x)}" y2="${String(PAD_T + innerH + 6)}" stroke="#999999" stroke-width="1.5"/>`;
+    })
+    .join("\n  ");
+
+  const circles = values
     .map((v, i) => {
       if (v <= 0) {
         return "";
@@ -73,13 +79,17 @@ export async function renderStep3LikertChartPng(data: Step3Data): Promise<Buffer
       const y = PAD_T + innerH - ((v - 1) / 4) * innerH;
       return `<circle cx="${String(x)}" cy="${String(y)}" r="4" fill="#F6D34A" stroke="#5F5E5E" stroke-width="1"/>`;
     })
-    .join("\n  ")}
-  ${keys
-    .map((_, i) => {
-      const x = PAD_L + i * stepX;
-      return `<text x="${String(x - 4)}" y="${String(H - 12)}" font-size="10" fill="#666666">Q${String(i + 1)}</text>`;
-    })
-    .join("\n  ")}
+    .join("\n  ");
+
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${String(W)}" height="${String(H)}">
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  ${gridLines}
+  <rect x="${String(PAD_L)}" y="${String(PAD_T)}" width="${String(innerW)}" height="${String(innerH)}" fill="none" stroke="#cccccc" stroke-width="1"/>
+  ${yTicks}
+  ${xTicks}
+  <polyline fill="none" stroke="#00B596" stroke-width="2.5" points="${polylinePoints}" />
+  ${circles}
 </svg>`;
 
   return sharp(Buffer.from(svg)).png().toBuffer();
