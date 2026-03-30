@@ -16,10 +16,30 @@ const LABELS: Record<GerchikovMotivationKey, string> = {
 };
 
 /**
+ * Краткие подписи осей для растеризации SVG→PNG (только ASCII).
+ * Sharp/librsvg на сервере часто не подключают шрифты с кириллицей — кириллица в SVG даёт «квадратики».
+ */
+export const GERCHIKOV_SVG_AXIS_CODES: Record<GerchikovMotivationKey, string> = {
+  material: "mat.",
+  professional: "prof",
+  autonomy: "auto",
+  organizational: "org",
+  stability: "stab",
+};
+
+/**
  * Возвращает подписи измерений мотивации (для отчётов и ИИ).
  */
 export function getGerchikovMotivationLabels(): Record<GerchikovMotivationKey, string> {
   return { ...LABELS };
+}
+
+/**
+ * Расшифровка кодов осей на русском — для абзаца под диаграммой в Word.
+ */
+export function getGerchikovMotivationChartLegendRu(): string {
+  const keys = Object.keys(LABELS) as GerchikovMotivationKey[];
+  return keys.map((k) => `${GERCHIKOV_SVG_AXIS_CODES[k]} — ${LABELS[k]}`).join(" ");
 }
 
 /**
