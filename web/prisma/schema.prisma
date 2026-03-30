@@ -25,6 +25,9 @@ model ScreeningSubmission {
   step3Data Json @map("step3_data")
   step4Data Json @map("step4_data")
 
+  /** Автоподсчёт КОТ, ориентировочный IQ, заключение LLM, флаг отправки письма. */
+  kotReport Json? @map("kot_report")
+
   @@map("screening_submission")
 }
 

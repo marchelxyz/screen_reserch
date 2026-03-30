@@ -13,5 +13,9 @@ CREATE TABLE IF NOT EXISTS screening_submission (
   step1_data JSONB NOT NULL,
   step2_data JSONB NOT NULL,
   step3_data JSONB NOT NULL,
-  step4_data JSONB NOT NULL
+  step4_data JSONB NOT NULL,
+  kot_report JSONB
 );
+
+-- Уже существующие БД без столбца (старый скрипт без kot_report):
+ALTER TABLE screening_submission ADD COLUMN IF NOT EXISTS kot_report JSONB;

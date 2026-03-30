@@ -83,6 +83,10 @@ export const step4DataSchema = z
     education: z.string().min(1).max(64),
     favoriteBook: step4FieldSchema,
     favoriteFilm: step4FieldSchema,
+    hobby: step4FieldSchema,
+    favoriteMusic: step4FieldSchema,
+    leisureTime: step4FieldSchema,
+    lifeMotto: step4FieldSchema,
   })
   .strict();
 

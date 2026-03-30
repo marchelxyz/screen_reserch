@@ -18,6 +18,7 @@ import {
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
 import { setScreeningMaxStepCookie } from "@/lib/screeningProgressCookie";
 import { getContinueButtonLabel } from "@/lib/testMotivation";
+import { isStep4Complete } from "@/lib/validation/stepCompletion";
 import { Step4Data, Step3Data, useFormStore } from "@/store/useFormStore";
 
 type SelectOption = { value: string; label: string };
@@ -34,17 +35,6 @@ function isStep3Complete(data: Step3Data): boolean {
       data.q8 &&
       data.q9 &&
       data.q10
-  );
-}
-
-function isStep4Complete(data: Step4Data): boolean {
-  return (
-    data.city.trim().length > 0 &&
-    data.familyStatus.trim().length > 0 &&
-    data.children.trim().length > 0 &&
-    data.education.trim().length > 0 &&
-    data.favoriteBook.trim().length > 0 &&
-    data.favoriteFilm.trim().length > 0
   );
 }
 
@@ -224,6 +214,54 @@ export default function Step4Page(): React.ReactElement {
                 onChange={(e) => setField("favoriteFilm", e.target.value)}
                 className={stepInputClass}
                 placeholder="Название фильма"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className={stepLabelClass}>
+                Хобби или увлечение
+              </label>
+              <input
+                value={step4Data.hobby}
+                onChange={(e) => setField("hobby", e.target.value)}
+                className={stepInputClass}
+                placeholder="Чем увлекаетесь вне работы"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className={stepLabelClass}>
+                Любимая музыка
+              </label>
+              <input
+                value={step4Data.favoriteMusic}
+                onChange={(e) => setField("favoriteMusic", e.target.value)}
+                className={stepInputClass}
+                placeholder="Жанр, исполнитель или группа"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className={stepLabelClass}>
+                Как проводите свободное время
+              </label>
+              <input
+                value={step4Data.leisureTime}
+                onChange={(e) => setField("leisureTime", e.target.value)}
+                className={stepInputClass}
+                placeholder="Кратко, в свободной форме"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className={stepLabelClass}>
+                Любимая цитата или личный девиз
+              </label>
+              <input
+                value={step4Data.lifeMotto}
+                onChange={(e) => setField("lifeMotto", e.target.value)}
+                className={stepInputClass}
+                placeholder="Необязательно дословно"
               />
             </div>
           </div>
