@@ -71,8 +71,6 @@ export type SubmitPayload = {
   step2Data: Step2Data;
   step3Data: Step3Data;
   step4Data: Step4Data;
-  /** Токен Cloudflare Turnstile (если включена капча на шаге 4). */
-  turnstileToken?: string;
 };
 
 type FormStore = {
@@ -92,8 +90,6 @@ type FormStore = {
 
   submissionStatus: SubmissionStatus;
   submitError: string | null;
-  /** Ответ виджета Turnstile (шаг 4). */
-  turnstileToken: string | null;
 
   setProfileName: (name: string) => void;
   setPersonalDataConsent: (consent: boolean) => void;
@@ -102,7 +98,6 @@ type FormStore = {
   setStep3Data: (data: Step3Data) => void;
   setStep4Data: (data: Step4Data) => void;
   setKotShuffleOrder: (order: KotQuestionKey[]) => void;
-  setTurnstileToken: (token: string | null) => void;
 
   /** Удаляет ответы анкеты из памяти и persisted state (после успешной отправки). */
   clearSensitiveFormData: () => void;
@@ -201,7 +196,6 @@ export const useFormStore = create<FormStore>()(
 
       submissionStatus: "idle",
       submitError: null,
-      turnstileToken: null,
 
       setProfileName: (name) => set({ profileName: name }),
       setPersonalDataConsent: (consent) =>
@@ -214,7 +208,6 @@ export const useFormStore = create<FormStore>()(
       setStep3Data: (data) => set({ step3Data: data }),
       setStep4Data: (data) => set({ step4Data: data }),
       setKotShuffleOrder: (order) => set({ kotShuffleOrder: order }),
-      setTurnstileToken: (token) => set({ turnstileToken: token }),
 
       clearSensitiveFormData: () =>
         set({
@@ -223,7 +216,6 @@ export const useFormStore = create<FormStore>()(
           step3Data: { ...defaultStep3Data },
           step4Data: { ...defaultStep4Data },
           kotShuffleOrder: null,
-          turnstileToken: null,
         }),
 
       beginTestSession: () => {
@@ -237,7 +229,6 @@ export const useFormStore = create<FormStore>()(
           ...resetStepAnswers(),
           submissionStatus: "idle",
           submitError: null,
-          turnstileToken: null,
         });
       },
 
@@ -254,7 +245,6 @@ export const useFormStore = create<FormStore>()(
           ...resetStepAnswers(),
           submissionStatus: "idle",
           submitError: null,
-          turnstileToken: null,
         });
       },
 
@@ -269,7 +259,6 @@ export const useFormStore = create<FormStore>()(
           ...resetStepAnswers(),
           submissionStatus: "idle",
           submitError: null,
-          turnstileToken: null,
         });
       },
 
@@ -331,19 +320,6 @@ export const useFormStore = create<FormStore>()(
           return;
         }
 
-        const siteKey =
-          typeof process !== "undefined"
-            ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
-            : undefined;
-        if (siteKey && siteKey.length > 0 && !state.turnstileToken) {
-          screeningClientLog("submit_blocked_captcha", { sessionRef });
-          set({
-            submissionStatus: "error",
-            submitError: "Пройдите проверку «Я не робот» на шаге 4.",
-          });
-          return;
-        }
-
         set({ submissionStatus: "submitting", submitError: null });
 
         const payload: SubmitPayload = {
@@ -355,14 +331,10 @@ export const useFormStore = create<FormStore>()(
           step2Data: state.step2Data,
           step3Data: state.step3Data,
           step4Data: state.step4Data,
-          ...(state.turnstileToken
-            ? { turnstileToken: state.turnstileToken }
-            : {}),
         };
 
         screeningClientLog("submit_fetch_start", {
           sessionRef,
-          hasTurnstileToken: Boolean(state.turnstileToken),
         });
 
         const fetchStarted =
@@ -420,7 +392,7 @@ export const useFormStore = create<FormStore>()(
       },
     }),
     {
-      name: "profile-uspese-form-v8-kot-shuffle-step4extra",
+      name: "profile-uspese-form-v9-no-turnstile",
       partialize: (state) => ({
         sessionId: state.sessionId,
         profileName: state.profileName,
@@ -433,7 +405,6 @@ export const useFormStore = create<FormStore>()(
         kotShuffleOrder: state.kotShuffleOrder,
         submissionStatus: state.submissionStatus,
         submitError: state.submitError,
-        turnstileToken: state.turnstileToken,
       }),
       skipHydration: true,
     }
