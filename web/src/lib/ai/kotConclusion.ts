@@ -4,35 +4,34 @@ import {
 } from "@/lib/ai/openaiPromptPolicy";
 import { screeningServerLog } from "@/lib/logging/screeningServerLog";
 
-type KotConclusionJson = {
+type ScreeningConclusionJson = {
   conclusion: string;
+  hiringRecommendations?: string;
+};
+
+export type ScreeningConclusionResult = {
+  conclusion: string | null;
+  hiringRecommendations: string | null;
 };
 
 /**
- * Запрашивает у OpenAI текст заключения по баллам КОТ и контексту профиля.
- * Возвращает null при отсутствии ключа или ошибке API.
+ * Запрашивает у OpenAI заключение и рекомендации по найму по полному контексту скрининга.
+ * Возвращает null-поля при отсутствии ключа или ошибке API.
  */
-export async function generateKotScreeningConclusion(input: {
-  rawScore: number;
-  maxScore: number;
-  estimatedIq: number;
-  iqNormNote: string;
-  profileContext: string;
+export async function generateScreeningConclusion(input: {
+  screeningContext: string;
   sessionRef: string;
-}): Promise<string | null> {
+}): Promise<ScreeningConclusionResult> {
+  const empty: ScreeningConclusionResult = { conclusion: null, hiringRecommendations: null };
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey || apiKey.length === 0) {
     screeningServerLog("openai", "skipped_no_api_key", { sessionRef: input.sessionRef });
-    return null;
+    return empty;
   }
 
   const model = process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini";
   const userPayload = {
-    rawScore: input.rawScore,
-    maxScore: input.maxScore,
-    estimatedIq: input.estimatedIq,
-    iqNormNote: input.iqNormNote,
-    profileContext: input.profileContext,
+    screeningContext: input.screeningContext,
   };
 
   const fetchStarted = Date.now();
@@ -46,7 +45,7 @@ export async function generateKotScreeningConclusion(input: {
       },
       body: JSON.stringify({
         model,
-        temperature: 0.4,
+        temperature: 0.35,
         response_format: OPENAI_JSON_RESPONSE_FORMAT,
         messages: [
           { role: "system", content: OPENAI_SYSTEM_PROMPT_KOT_CONCLUSION },
@@ -64,7 +63,7 @@ export async function generateKotScreeningConclusion(input: {
       durationMs: Date.now() - fetchStarted,
       errorName: err instanceof Error ? err.name : "unknown",
     });
-    return null;
+    return empty;
   }
 
   if (!res.ok) {
@@ -74,7 +73,7 @@ export async function generateKotScreeningConclusion(input: {
       status: res.status,
       durationMs: Date.now() - fetchStarted,
     });
-    return null;
+    return empty;
   }
 
   const data = (await res.json()) as {
@@ -87,19 +86,19 @@ export async function generateKotScreeningConclusion(input: {
       model,
       durationMs: Date.now() - fetchStarted,
     });
-    return null;
+    return empty;
   }
 
-  let parsed: KotConclusionJson;
+  let parsed: ScreeningConclusionJson;
   try {
-    parsed = JSON.parse(text) as KotConclusionJson;
+    parsed = JSON.parse(text) as ScreeningConclusionJson;
   } catch {
     screeningServerLog("openai", "json_parse_failed", {
       sessionRef: input.sessionRef,
       model,
       responseChars: text.length,
     });
-    return null;
+    return empty;
   }
 
   if (typeof parsed.conclusion !== "string" || parsed.conclusion.length === 0) {
@@ -107,15 +106,24 @@ export async function generateKotScreeningConclusion(input: {
       sessionRef: input.sessionRef,
       model,
     });
-    return null;
+    return empty;
   }
+
+  const hiring =
+    typeof parsed.hiringRecommendations === "string" && parsed.hiringRecommendations.length > 0
+      ? parsed.hiringRecommendations.slice(0, 12000)
+      : null;
 
   screeningServerLog("openai", "success", {
     sessionRef: input.sessionRef,
     model,
     conclusionChars: parsed.conclusion.length,
+    hiringChars: hiring?.length ?? 0,
     durationMs: Date.now() - fetchStarted,
   });
 
-  return parsed.conclusion.slice(0, 12000);
+  return {
+    conclusion: parsed.conclusion.slice(0, 12000),
+    hiringRecommendations: hiring,
+  };
 }

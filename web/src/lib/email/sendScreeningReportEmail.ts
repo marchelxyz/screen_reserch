@@ -11,9 +11,12 @@ export type ScreeningReportEmailPayload = {
   profileName: string;
   rawScore: number;
   maxScore: number;
-  estimatedIq: number;
+  kotOfficialIq: number;
   iqNormNote: string;
   conclusionText: string | null;
+  hiringRecommendations: string | null;
+  /** Вложение отчёта Word (.docx), если сформировано. */
+  reportDocxBuffer?: Buffer | null;
 };
 
 /**
@@ -203,6 +206,13 @@ export async function sendScreeningReportEmail(
         )}</pre>`
       : "<p>Заключение не сгенерировано (нет OPENAI_API_KEY или ошибка модели).</p>";
 
+  const hiringBlock =
+    payload.hiringRecommendations !== null
+      ? `<pre style="white-space:pre-wrap;font-family:inherit;">${escapeHtmlForPdf(
+          payload.hiringRecommendations
+        )}</pre>`
+      : "<p>Рекомендации по найму не сгенерированы (нет OPENAI_API_KEY или ошибка модели).</p>";
+
   const html = `
     <h1>Новая анкета «Профиль Успеха»</h1>
     <p><strong>Сессия:</strong> ${safeSession}</p>
@@ -210,24 +220,42 @@ export async function sendScreeningReportEmail(
     <p><strong>Сырой балл КОТ:</strong> ${String(payload.rawScore)} / ${String(
       payload.maxScore
     )}</p>
-    <p><strong>Ориентировочный IQ:</strong> ${String(payload.estimatedIq)}</p>
+    <p><strong>IQ (таблица норм КОТ):</strong> ${String(payload.kotOfficialIq)}</p>
     <p><em>${escapeHtmlForPdf(payload.iqNormNote)}</em></p>
     <h2>Заключение</h2>
     ${conclusionBlock}
+    <h2>Рекомендации по найму</h2>
+    ${hiringBlock}
+    <p><em>Полный отчёт с таблицами и графиками прилагается в формате Word (.docx), если вложение сформировано.</em></p>
   `;
 
   const textLines = [
     `Сессия: ${payload.sessionId}`,
     `Профиль: ${payload.profileName}`,
     `Сырой балл КОТ: ${String(payload.rawScore)} / ${String(payload.maxScore)}`,
-    `Ориентировочный IQ: ${String(payload.estimatedIq)}`,
+    `IQ (таблица норм КОТ): ${String(payload.kotOfficialIq)}`,
     payload.iqNormNote,
     "",
     "Заключение:",
     payload.conclusionText ?? "(не сгенерировано)",
+    "",
+    "Рекомендации по найму:",
+    payload.hiringRecommendations ?? "(не сгенерировано)",
   ];
 
   const sendStarted = Date.now();
+  const attachments =
+    payload.reportDocxBuffer && payload.reportDocxBuffer.length > 0
+      ? [
+          {
+            filename: `screening-report-${payload.sessionId}.docx`,
+            content: payload.reportDocxBuffer,
+            contentType:
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          },
+        ]
+      : undefined;
+
   try {
     await transporter.sendMail({
       from,
@@ -236,6 +264,7 @@ export async function sendScreeningReportEmail(
       subject: `Профиль Успеха: анкета (${payload.profileName})`,
       text: textLines.join("\n"),
       html,
+      attachments,
     });
   } catch (err) {
     const { errorName, errorMessage, responseCode } = smtpErrorLogFields(err);
