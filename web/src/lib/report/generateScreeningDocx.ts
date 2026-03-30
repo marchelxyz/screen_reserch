@@ -193,14 +193,7 @@ export async function generateScreeningDocxBuffer(input: ScreeningDocxInput): Pr
       text: "6. Рекомендации по найму",
       heading: HeadingLevel.HEADING_1,
     }),
-    new Paragraph({
-      children: [
-        new TextRun(
-          input.hiringRecommendations ??
-            "Рекомендации не сгенерированы (нет ключа OpenAI или ошибка модели)."
-        ),
-      ],
-    })
+    ...buildHiringRecommendationsParagraphs(input.hiringRecommendations),
   );
 
   const doc = new Document({
@@ -213,6 +206,55 @@ export async function generateScreeningDocxBuffer(input: ScreeningDocxInput): Pr
 function formatMotivationLine(scores: Record<GerchikovMotivationKey, number>): string {
   const keys = Object.keys(scores) as GerchikovMotivationKey[];
   return keys.map((k) => `${k}: ${String(scores[k])}`).join(", ");
+}
+
+/**
+ * Разбивает многострочные рекомендации на абзацы Word; подзаголовки блоков выделяет полужирным.
+ */
+function buildHiringRecommendationsParagraphs(text: string | null): Paragraph[] {
+  if (text === null || text.trim().length === 0) {
+    return [
+      new Paragraph({
+        children: [
+          new TextRun(
+            "Рекомендации не сгенерированы (нет ключа OpenAI или ошибка модели)."
+          ),
+        ],
+      }),
+    ];
+  }
+  const lines = text.split(/\r?\n/);
+  const out: Paragraph[] = [];
+  for (const line of lines) {
+    const trimmedEnd = line.trimEnd();
+    if (trimmedEnd === "") {
+      out.push(new Paragraph({ text: "" }));
+      continue;
+    }
+    const bold = isHiringBlockHeading(trimmedEnd);
+    out.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: trimmedEnd,
+            bold,
+          }),
+        ],
+      })
+    );
+  }
+  return out;
+}
+
+function isHiringBlockHeading(line: string): boolean {
+  const t = line.trim();
+  if (t.startsWith("БЛОК ")) {
+    return true;
+  }
+  if (t.length >= 8 && t.length <= 140 && t === t.toUpperCase() && /[А-ЯЁA-Z]/.test(t)) {
+    return true;
+  }
+  return false;
 }
 
 function buildKotAnswersTable(step1: Step1Data): Table {
