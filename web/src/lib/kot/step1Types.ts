@@ -1,51 +1,75 @@
 /**
- * Шаг 1: сокращённый блок в духе КОТ (краткий ориентировочный тест) /
- * Wonderlic — оригинальные формулировки, 30 пунктов вместо 50.
+ * Шаг 1: официальный КОТ (Бузин / Вандерлик), 50 заданий по методичке.
+ * Ответы хранятся строками (выбор «1»…«5», число, «да», «н», «3,5» и т.д.).
  */
 
-export const KOT_STEP_QUESTION_COUNT = 30;
+export const KOT_STEP_QUESTION_COUNT = 50;
 
-export type KotQuestionKey =
-  | "q1"
-  | "q2"
-  | "q3"
-  | "q4"
-  | "q5"
-  | "q6"
-  | "q7"
-  | "q8"
-  | "q9"
-  | "q10"
-  | "q11"
-  | "q12"
-  | "q13"
-  | "q14"
-  | "q15"
-  | "q16"
-  | "q17"
-  | "q18"
-  | "q19"
-  | "q20"
-  | "q21"
-  | "q22"
-  | "q23"
-  | "q24"
-  | "q25"
-  | "q26"
-  | "q27"
-  | "q28"
-  | "q29"
-  | "q30";
+const KEYS_50 = [
+  "q1",
+  "q2",
+  "q3",
+  "q4",
+  "q5",
+  "q6",
+  "q7",
+  "q8",
+  "q9",
+  "q10",
+  "q11",
+  "q12",
+  "q13",
+  "q14",
+  "q15",
+  "q16",
+  "q17",
+  "q18",
+  "q19",
+  "q20",
+  "q21",
+  "q22",
+  "q23",
+  "q24",
+  "q25",
+  "q26",
+  "q27",
+  "q28",
+  "q29",
+  "q30",
+  "q31",
+  "q32",
+  "q33",
+  "q34",
+  "q35",
+  "q36",
+  "q37",
+  "q38",
+  "q39",
+  "q40",
+  "q41",
+  "q42",
+  "q43",
+  "q44",
+  "q45",
+  "q46",
+  "q47",
+  "q48",
+  "q49",
+  "q50",
+] as const;
 
-/** Выбранный вариант ответа: «1»…«4». */
-export type KotChoiceId = "1" | "2" | "3" | "4";
+export type KotQuestionKey = (typeof KEYS_50)[number];
 
-export type KotStep1Data = Record<KotQuestionKey, KotChoiceId | null>;
+export type KotStep1Data = Record<KotQuestionKey, string | null>;
 
 export function createEmptyKotStep1Data(): KotStep1Data {
-  const o = {} as Record<string, KotChoiceId | null>;
-  for (let i = 1; i <= KOT_STEP_QUESTION_COUNT; i += 1) {
-    o[`q${String(i)}`] = null;
+  const o = {} as Record<string, string | null>;
+  for (const k of KEYS_50) {
+    o[k] = null;
   }
   return o as KotStep1Data;
+}
+
+export function allKotQuestionKeys(): readonly KotQuestionKey[] {
+  return KEYS_50;
 }

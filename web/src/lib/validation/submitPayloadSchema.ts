@@ -10,15 +10,15 @@ const likertAnswerSchema = z.enum([
   "fully_disagree",
 ]);
 
-const kotChoiceSchema = z.enum(["1", "2", "3", "4"]);
+const kotAnswerStringSchema = z.string().trim().min(1).max(4000);
 
-/** Шаг 1 — КОТ (сокращённо), по одному варианту «1»…«4» на каждый из 30 пунктов. */
+/** Шаг 1 — официальный КОТ (50 заданий): строковый ответ с бланка. */
 export const step1DataSchema = z
   .object(
     Object.fromEntries(
       Array.from({ length: KOT_STEP_QUESTION_COUNT }, (_, i) => [
         `q${String(i + 1)}`,
-        kotChoiceSchema,
+        kotAnswerStringSchema,
       ])
     ) as Record<string, ZodTypeAny>
   )

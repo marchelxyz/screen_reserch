@@ -17,8 +17,8 @@ import type { Step3Data, Step4Data } from "@/store/useFormStore";
 export function buildScreeningConclusionContext(input: {
   rawScore: number;
   maxScore: number;
-  kotOfficialIq: number;
-  iqNormNote: string;
+  kotIpLevelLabel: string;
+  kotIpNormNote: string;
   profileName: string;
   step2: GerchikovStep2Data;
   step3: Step3Data;
@@ -32,9 +32,9 @@ export function buildScreeningConclusionContext(input: {
   const step3Line = `Средний_балл_шкалы_Ликерта_шаг3: ${String(mean3)} (1-5). ${describeStep3MeanLevel(mean3)}`;
 
   const kotBlock = [
-    `КОТ_сырой_балл: ${String(input.rawScore)} из ${String(input.maxScore)}`,
-    `КОТ_IQ_по_таблице_норм: ${String(input.kotOfficialIq)}`,
-    `КОТ_примечание_к_нормам: ${sanitizeForAiInput(input.iqNormNote, 400)}`,
+    `КОТ_Ип_число_верных: ${String(input.rawScore)} из ${String(input.maxScore)}`,
+    `КОТ_уровень_по_методичке: ${sanitizeForAiInput(input.kotIpLevelLabel, 120)}`,
+    `КОТ_примечание_к_нормам: ${sanitizeForAiInput(input.kotIpNormNote, 400)}`,
   ].join("\n");
 
   return [

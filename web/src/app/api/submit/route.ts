@@ -11,7 +11,7 @@ import {
   smtpErrorLogFields,
 } from "@/lib/email/sendScreeningReportEmail";
 import type { KotReportJson } from "@/lib/kot/kotReportTypes";
-import { countKotRawScore, getKotIqNormNote, getKotOfficialIq } from "@/lib/kot/kotScore";
+import { countKotRawScore, getKotIpLevelLabel, getKotIpNormNote } from "@/lib/kot/kotScore";
 import { KOT_STEP_QUESTION_COUNT } from "@/lib/kot/step1Types";
 import { maskClientIp } from "@/lib/logging/maskClientIp";
 import { screeningServerLog, zodIssuesForLog } from "@/lib/logging/screeningServerLog";
@@ -117,13 +117,13 @@ export async function POST(
   const step1 = payload.step1Data as Step1Data;
   const rawScore = countKotRawScore(step1);
   const maxScore = KOT_STEP_QUESTION_COUNT;
-  const iqNormNote = getKotIqNormNote();
-  const kotOfficialIq = getKotOfficialIq(rawScore, maxScore);
+  const kotIpNormNote = getKotIpNormNote();
+  const kotIpLevelLabel = getKotIpLevelLabel(rawScore);
   const screeningContext = buildScreeningConclusionContext({
     rawScore,
     maxScore,
-    kotOfficialIq,
-    iqNormNote,
+    kotIpLevelLabel,
+    kotIpNormNote,
     profileName: payload.profileName,
     step2: payload.step2Data,
     step3: payload.step3Data,
@@ -134,7 +134,7 @@ export async function POST(
     sessionRef,
     rawScore,
     maxScore,
-    kotOfficialIq,
+    kotIpLevelLabel,
   });
 
   let conclusionText: string | null = null;
@@ -176,8 +176,9 @@ export async function POST(
       sessionId: payload.sessionId,
       rawScore,
       maxScore,
-      kotOfficialIq,
-      iqNormNote,
+      kotIp: rawScore,
+      kotIpLevelLabel,
+      kotIpNormNote,
       step1: step1,
       step2: payload.step2Data,
       step3: payload.step3Data,
@@ -207,8 +208,9 @@ export async function POST(
       profileName: payload.profileName,
       rawScore,
       maxScore,
-      kotOfficialIq,
-      iqNormNote,
+      kotIp: rawScore,
+      kotIpLevelLabel,
+      kotIpNormNote,
       conclusionText,
       hiringRecommendations,
       reportDocxBuffer,
@@ -232,11 +234,12 @@ export async function POST(
   }
 
   const kotReport: KotReportJson = {
-    version: 2,
+    version: 3,
     rawScore,
     maxScore,
-    kotOfficialIq,
-    iqNormNote,
+    kotIp: rawScore,
+    kotIpLevelLabel,
+    kotIpNormNote,
     conclusionText,
     hiringRecommendations,
     conclusionGeneratedAt,

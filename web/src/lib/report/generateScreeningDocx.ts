@@ -12,8 +12,11 @@ import {
   WidthType,
 } from "docx";
 
-import { KOT_ANSWER_KEYS } from "@/lib/kot/kotAnswerKeys";
-import { KOT_QUESTIONS } from "@/lib/kot/questions";
+import {
+  KOT_OFFICIAL_QUESTIONS_ORDERED,
+  type KotOfficialSpec,
+} from "@/lib/kot/kotOfficial50Questions";
+import { isKotOfficialAnswerCorrect } from "@/lib/kot/kotOfficial50Scoring";
 import { buildGerchikovReportRows } from "@/lib/gerchikov/gerchikovReportRows";
 import {
   computeGerchikovMotivationScores,
@@ -35,8 +38,9 @@ export type ScreeningDocxInput = {
   sessionId: string;
   rawScore: number;
   maxScore: number;
-  kotOfficialIq: number;
-  iqNormNote: string;
+  kotIp: number;
+  kotIpLevelLabel: string;
+  kotIpNormNote: string;
   step1: Step1Data;
   step2: GerchikovStep2Data;
   step3: Step3Data;
@@ -91,14 +95,12 @@ export async function generateScreeningDocxBuffer(input: ScreeningDocxInput): Pr
     new Paragraph({
       children: [
         new TextRun(
-          `Сырой балл: ${String(input.rawScore)} / ${String(input.maxScore)}; IQ по таблице норм: ${String(
-            input.kotOfficialIq
-          )}.`
+          `Ип (число верных): ${String(input.kotIp)} / ${String(input.maxScore)}; уровень по методичке: ${input.kotIpLevelLabel}.`
         ),
       ],
     }),
     new Paragraph({
-      children: [new TextRun({ italics: true, text: truncate(input.iqNormNote, 2000) })],
+      children: [new TextRun({ italics: true, text: truncate(input.kotIpNormNote, 2000) })],
     }),
     buildKotAnswersTable(input.step1),
     new Paragraph({ text: "" }),
@@ -257,6 +259,17 @@ function isHiringBlockHeading(line: string): boolean {
   return false;
 }
 
+function formatKotAnswerForDocx(spec: KotOfficialSpec, value: string | null): string {
+  if (value === null || value.trim() === "") {
+    return "—";
+  }
+  if (spec.kind === "mc") {
+    const opt = spec.options.find((o) => o.id === value);
+    return opt ? `${opt.id}. ${opt.label}` : value;
+  }
+  return value;
+}
+
 function buildKotAnswersTable(step1: Step1Data): Table {
   const rows: TableRow[] = [
     new TableRow({
@@ -269,20 +282,16 @@ function buildKotAnswersTable(step1: Step1Data): Table {
     }),
   ];
 
-  for (const q of KOT_QUESTIONS) {
-    const key = q.key;
+  for (const spec of KOT_OFFICIAL_QUESTIONS_ORDERED) {
+    const key = spec.key;
     const chosen = step1[key];
-    const correct = KOT_ANSWER_KEYS[key];
-    const chosenLabel =
-      chosen === null
-        ? "—"
-        : q.options.find((o) => o.id === chosen)?.label ?? chosen;
-    const ok = chosen !== null && chosen === correct ? "да" : "нет";
+    const chosenLabel = formatKotAnswerForDocx(spec, chosen);
+    const ok = isKotOfficialAnswerCorrect(key, chosen) ? "да" : "нет";
     rows.push(
       new TableRow({
         children: [
           cell(key.replace("q", "")),
-          cell(truncate(q.prompt, 400)),
+          cell(truncate(spec.prompt, 400)),
           cell(truncate(chosenLabel, 120)),
           cell(ok),
         ],
