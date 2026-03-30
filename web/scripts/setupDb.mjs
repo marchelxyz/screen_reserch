@@ -10,6 +10,7 @@
  *
  * Раньше в Docker не копировались prisma/ и prisma.config.ts, поэтому migrate deploy
  * вообще нельзя было вызывать в production.
+ * В .dockerignore не должно быть prisma/migrations — иначе в образе пустая папка и P3005.
  */
 
 import { execSync } from "node:child_process";
@@ -26,8 +27,14 @@ async function main() {
   console.log("[db:setup] bootstrap SQL (scripts/create_tables.sql)…");
   await runBootstrapSql(databaseUrl);
 
-  console.log("[db:setup] prisma migrate deploy…");
-  runPrismaMigrateDeploy();
+  if (!hasPrismaMigrationFiles()) {
+    console.warn(
+      "[db:setup] prisma/migrations пуст или отсутствует — пропускаем migrate deploy (схема только из create_tables.sql)."
+    );
+  } else {
+    console.log("[db:setup] prisma migrate deploy…");
+    runPrismaMigrateDeploy();
+  }
 
   console.log("[db:setup] done.");
 }
@@ -46,6 +53,27 @@ async function runBootstrapSql(databaseUrl) {
   } finally {
     await client.end();
   }
+}
+
+/**
+ * Проверяет, что в образе есть хотя бы одна миграция (в .dockerignore не должно быть prisma/migrations).
+ */
+function hasPrismaMigrationFiles() {
+  const migrationsDir = path.join(process.cwd(), "prisma", "migrations");
+  if (!fs.existsSync(migrationsDir)) {
+    return false;
+  }
+  const entries = fs.readdirSync(migrationsDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+    const sqlPath = path.join(migrationsDir, entry.name, "migration.sql");
+    if (fs.existsSync(sqlPath)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
