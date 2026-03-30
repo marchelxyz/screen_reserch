@@ -6,7 +6,10 @@ import {
 } from "@/lib/api/submitRateLimit";
 import { buildKotConclusionContext } from "@/lib/ai/buildKotConclusionContext";
 import { generateKotScreeningConclusion } from "@/lib/ai/kotConclusion";
-import { sendScreeningReportEmail } from "@/lib/email/sendScreeningReportEmail";
+import {
+  sendScreeningReportEmail,
+  smtpErrorLogFields,
+} from "@/lib/email/sendScreeningReportEmail";
 import type { KotReportJson } from "@/lib/kot/kotReportTypes";
 import {
   countKotRawScore,
@@ -177,10 +180,13 @@ export async function POST(
       durationMs: Date.now() - emailStarted,
     });
   } catch (err) {
+    const smtpFields = smtpErrorLogFields(err);
     screeningServerLog("submit", "email_exception", {
       sessionRef,
       durationMs: Date.now() - emailStarted,
-      errorName: err instanceof Error ? err.name : "unknown",
+      errorName: smtpFields.errorName,
+      errorMessage: smtpFields.errorMessage,
+      responseCode: smtpFields.responseCode ?? undefined,
     });
     emailSent = false;
   }
