@@ -100,7 +100,6 @@ const isoDateStringSchema = z
 
 /**
  * Тело POST /api/submit. Дополнительные поля запрещены (.strict()).
- * Токен Turnstile обязателен в production (проверка на сервере).
  */
 export const submitApiBodySchema = z
   .object({
@@ -112,8 +111,6 @@ export const submitApiBodySchema = z
     step2Data: step2DataSchema,
     step3Data: step3DataSchema,
     step4Data: step4DataSchema,
-    /** Cloudflare Turnstile response token. */
-    turnstileToken: z.string().min(10).max(4096).optional(),
   })
   .strict();
 

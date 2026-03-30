@@ -29,7 +29,7 @@
 |------------|------------|
 | Запрет прямого доступа к шагам 2–4 | `src/middleware.ts` + cookie `sr_max_step` (`src/lib/screeningProgressCookie.ts`), выставление на шагах 1–4 |
 | Очистка чувствительных данных | `clearSensitiveFormData()` в `useFormStore` после успешной отправки |
-| Валидация перед `fetch` | `isFullScreeningPayloadComplete` + проверка Turnstile при наличии site key |
+| Валидация перед `fetch` | `isFullScreeningPayloadComplete` в `useFormStore.submitData` |
 | Чувствительные экраны без утечки в статический HTML | Страницы шагов и анкеты — `'use client'` |
 
 ## 4. PDF и внешние ресурсы
@@ -49,8 +49,6 @@
 
 ## Переменные окружения (рекомендуемые)
 
-- `TURNSTILE_SECRET_KEY` — секрет Cloudflare Turnstile (сервер).
-- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` — публичный ключ виджета (клиент).
 - `OPENAI_API_KEY` — только на сервере, без `NEXT_PUBLIC_`.
 
-В production без `TURNSTILE_SECRET_KEY` проверка капчи на сервере отклоняет отправку (в dev без секрета проверка ослаблена для локальной разработки).
+Капча Cloudflare Turnstile в текущей версии отключена (нет виджета и серверной проверки).

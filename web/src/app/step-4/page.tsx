@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { Turnstile } from "@marsidev/react-turnstile";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -13,9 +12,7 @@ import {
   stepLabelClass,
   stepNavPrimaryButtonClass,
   stepPageContentClass,
-  stepSecondaryTextClass,
 } from "@/lib/stepPageTheme";
-import { clientSessionRef, screeningClientLog } from "@/lib/logging/screeningClientLog";
 import { useScreeningStepLog } from "@/lib/logging/useScreeningStepLog";
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
 import { setScreeningMaxStepCookie } from "@/lib/screeningProgressCookie";
@@ -52,13 +49,6 @@ export default function Step4Page(): React.ReactElement {
   const step3Data = useFormStore((s) => s.step3Data);
   const step4Data = useFormStore((s) => s.step4Data);
   const setStep4Data = useFormStore((s) => s.setStep4Data);
-  const setTurnstileToken = useFormStore((s) => s.setTurnstileToken);
-  const turnstileToken = useFormStore((s) => s.turnstileToken);
-
-  const turnstileSiteKey =
-    typeof process !== "undefined" ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY : undefined;
-  const captchaRequired = Boolean(turnstileSiteKey && turnstileSiteKey.length > 0);
-  const captchaOk = !captchaRequired || (turnstileToken !== null && turnstileToken.length > 0);
 
   useEffect(() => {
     if (!isProfileReady(profileName, personalDataConsent, consentRecordedAt)) {
@@ -78,7 +68,7 @@ export default function Step4Page(): React.ReactElement {
     setScreeningMaxStepCookie(4);
   }, []);
 
-  const complete = isStep4Complete(step4Data) && captchaOk;
+  const complete = isStep4Complete(step4Data);
   const answeredCount = getAllAnsweredCount(step1Data, step2Data, step3Data, step4Data);
   const continueLabel = getContinueButtonLabel(answeredCount);
   const primaryLabel = complete ? "Завершить" : continueLabel;
@@ -268,36 +258,6 @@ export default function Step4Page(): React.ReactElement {
               />
             </div>
           </div>
-
-          {turnstileSiteKey ? (
-            <div className="mt-6 flex justify-center">
-              <Turnstile
-                siteKey={turnstileSiteKey}
-                onSuccess={(token) => {
-                  screeningClientLog("turnstile_client_success", {
-                    sessionRef: clientSessionRef(sessionId) ?? "none",
-                  });
-                  setTurnstileToken(token);
-                }}
-                onExpire={() => {
-                  screeningClientLog("turnstile_client_expire", {
-                    sessionRef: clientSessionRef(sessionId) ?? "none",
-                  });
-                  setTurnstileToken(null);
-                }}
-                onError={() => {
-                  screeningClientLog("turnstile_client_error", {
-                    sessionRef: clientSessionRef(sessionId) ?? "none",
-                  });
-                  setTurnstileToken(null);
-                }}
-              />
-            </div>
-          ) : (
-            <p className={`mt-4 text-center text-sm ${stepSecondaryTextClass}`}>
-              В режиме разработки проверка Turnstile отключена (нет NEXT_PUBLIC_TURNSTILE_SITE_KEY).
-            </p>
-          )}
         </div>
 
         <div className="mt-7 flex flex-wrap items-center justify-between gap-3">
