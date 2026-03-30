@@ -11,8 +11,9 @@ export type ScreeningReportEmailPayload = {
   profileName: string;
   rawScore: number;
   maxScore: number;
-  kotOfficialIq: number;
-  iqNormNote: string;
+  kotIp: number;
+  kotIpLevelLabel: string;
+  kotIpNormNote: string;
   conclusionText: string | null;
   hiringRecommendations: string | null;
   /** Вложение отчёта Word (.docx), если сформировано. */
@@ -220,8 +221,11 @@ export async function sendScreeningReportEmail(
     <p><strong>Сырой балл КОТ:</strong> ${String(payload.rawScore)} / ${String(
       payload.maxScore
     )}</p>
-    <p><strong>IQ (таблица норм КОТ):</strong> ${String(payload.kotOfficialIq)}</p>
-    <p><em>${escapeHtmlForPdf(payload.iqNormNote)}</em></p>
+    <p><strong>Ип (число верных по КОТ):</strong> ${String(payload.kotIp)} / ${String(
+      payload.maxScore
+    )}</p>
+    <p><strong>Уровень по методичке:</strong> ${escapeHtmlForPdf(payload.kotIpLevelLabel)}</p>
+    <p><em>${escapeHtmlForPdf(payload.kotIpNormNote)}</em></p>
     <h2>Заключение</h2>
     ${conclusionBlock}
     <h2>Рекомендации по найму</h2>
@@ -233,8 +237,9 @@ export async function sendScreeningReportEmail(
     `Сессия: ${payload.sessionId}`,
     `Профиль: ${payload.profileName}`,
     `Сырой балл КОТ: ${String(payload.rawScore)} / ${String(payload.maxScore)}`,
-    `IQ (таблица норм КОТ): ${String(payload.kotOfficialIq)}`,
-    payload.iqNormNote,
+    `Ип (КОТ): ${String(payload.kotIp)} / ${String(payload.maxScore)}`,
+    `Уровень: ${payload.kotIpLevelLabel}`,
+    payload.kotIpNormNote,
     "",
     "Заключение:",
     payload.conclusionText ?? "(не сгенерировано)",

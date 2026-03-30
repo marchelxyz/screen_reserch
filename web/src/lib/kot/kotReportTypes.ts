@@ -2,12 +2,13 @@
  * Сохраняемый в БД результат автоподсчёта КОТ и заключения (LLM).
  */
 export type KotReportJson = {
-  version: 2;
+  version: 3;
+  /** Число верных ответов (Ип). */
   rawScore: number;
   maxScore: number;
-  /** IQ по таблице норм КОТ (см. `kotOfficialNorms.ts`). */
-  kotOfficialIq: number;
-  iqNormNote: string;
+  kotIp: number;
+  kotIpLevelLabel: string;
+  kotIpNormNote: string;
   conclusionText: string | null;
   hiringRecommendations: string | null;
   conclusionGeneratedAt: string | null;

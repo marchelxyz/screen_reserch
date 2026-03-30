@@ -3,10 +3,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { GerchikovStep2Data } from "@/lib/gerchikov/step2Types";
-import { seededShuffleKotKeys } from "@/lib/kot/kotShuffle";
 import {
   createEmptyKotStep1Data,
-  type KotQuestionKey,
   type KotStep1Data,
 } from "@/lib/kot/step1Types";
 import { clientSessionRef, screeningClientLog } from "@/lib/logging/screeningClientLog";
@@ -19,7 +17,7 @@ import {
 import { isFullScreeningPayloadComplete } from "@/lib/validation/stepCompletion";
 import { generateSessionId } from "@/lib/sessionId";
 
-/** Шаг 1: сокращённый КОТ (30 вопросов, варианты «1»–«4»). */
+/** Шаг 1: официальный КОТ (50 заданий), ответы строками. */
 export type Step1Data = KotStep1Data;
 
 /** Опросник мотивации (методика Герчикова), шаг 2. */
@@ -85,9 +83,6 @@ type FormStore = {
   step3Data: Step3Data;
   step4Data: Step4Data;
 
-  /** Порядок отображения заданий КОТ (перемешан по sessionId). */
-  kotShuffleOrder: KotQuestionKey[] | null;
-
   submissionStatus: SubmissionStatus;
   submitError: string | null;
 
@@ -97,7 +92,6 @@ type FormStore = {
   setStep2Data: (data: Step2Data) => void;
   setStep3Data: (data: Step3Data) => void;
   setStep4Data: (data: Step4Data) => void;
-  setKotShuffleOrder: (order: KotQuestionKey[]) => void;
 
   /** Удаляет ответы анкеты из памяти и persisted state (после успешной отправки). */
   clearSensitiveFormData: () => void;
@@ -192,7 +186,6 @@ export const useFormStore = create<FormStore>()(
       step2Data: defaultStep2Data,
       step3Data: defaultStep3Data,
       step4Data: defaultStep4Data,
-      kotShuffleOrder: null,
 
       submissionStatus: "idle",
       submitError: null,
@@ -207,7 +200,6 @@ export const useFormStore = create<FormStore>()(
       setStep2Data: (data) => set({ step2Data: data }),
       setStep3Data: (data) => set({ step3Data: data }),
       setStep4Data: (data) => set({ step4Data: data }),
-      setKotShuffleOrder: (order) => set({ kotShuffleOrder: order }),
 
       clearSensitiveFormData: () =>
         set({
@@ -215,7 +207,6 @@ export const useFormStore = create<FormStore>()(
           step2Data: { ...defaultStep2Data },
           step3Data: { ...defaultStep3Data },
           step4Data: { ...defaultStep4Data },
-          kotShuffleOrder: null,
         }),
 
       beginTestSession: () => {
@@ -225,7 +216,6 @@ export const useFormStore = create<FormStore>()(
         });
         set({
           sessionId,
-          kotShuffleOrder: seededShuffleKotKeys(sessionId),
           ...resetStepAnswers(),
           submissionStatus: "idle",
           submitError: null,
@@ -241,7 +231,6 @@ export const useFormStore = create<FormStore>()(
         });
         set({
           sessionId: null,
-          kotShuffleOrder: null,
           ...resetStepAnswers(),
           submissionStatus: "idle",
           submitError: null,
@@ -255,7 +244,6 @@ export const useFormStore = create<FormStore>()(
         });
         set({
           sessionId: null,
-          kotShuffleOrder: null,
           ...resetStepAnswers(),
           submissionStatus: "idle",
           submitError: null,
@@ -392,7 +380,7 @@ export const useFormStore = create<FormStore>()(
       },
     }),
     {
-      name: "profile-uspese-form-v9-no-turnstile",
+      name: "profile-uspese-form-v10-kot50",
       partialize: (state) => ({
         sessionId: state.sessionId,
         profileName: state.profileName,
@@ -402,7 +390,6 @@ export const useFormStore = create<FormStore>()(
         step2Data: state.step2Data,
         step3Data: state.step3Data,
         step4Data: state.step4Data,
-        kotShuffleOrder: state.kotShuffleOrder,
         submissionStatus: state.submissionStatus,
         submitError: state.submitError,
       }),
