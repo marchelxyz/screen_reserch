@@ -7,8 +7,10 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { QuestionCard } from "@/components/QuestionCard";
 import { StepLayout } from "@/components/StepLayout";
 import { TestMotivation } from "@/components/TestMotivation";
-import { KOT_QUESTIONS } from "@/lib/kot/questions";
+import { seededShuffleKotKeys } from "@/lib/kot/kotShuffle";
+import { KOT_QUESTIONS_BY_KEY } from "@/lib/kot/questions";
 import type { KotChoiceId, KotQuestionKey } from "@/lib/kot/step1Types";
+import { KOT_STEP_QUESTION_COUNT } from "@/lib/kot/step1Types";
 import {
   questionCardSurfaceClass,
   stepNavPrimaryButtonClass,
@@ -23,9 +25,9 @@ import { isStep1Complete } from "@/lib/validation/stepCompletion";
 import { useFormStore } from "@/store/useFormStore";
 
 const KOT_INTRO_PARAGRAPHS: string[] = [
-  "Перед вами сокращённый блок в духе методики КОТ (краткий ориентировочный тест) и теста Вандерлика (Wonderlic): аналогии, числовые задачи, смысл высказываний, ряды и логика.",
-  "В оригинале таких заданий 50; здесь — 30, чтобы сохранить структуру опроса без чрезмерной длины. Выберите один ответ в каждом пункте.",
-  "Формулировки подобраны для экранного прохождения и не являются дословной копией издания методики.",
+  "Блок краткого ориентировочного теста (КОТ): выберите один вариант в каждом пункте.",
+  "Задания показаны в случайном порядке, уникальном для этой сессии; разбиения по темам на экране нет.",
+  "Формулировки вопросов в коде приложения должны соответствовать вашему лицензионному изданию методики; при смене текстов обновите ключ ответов на сервере.",
 ];
 
 export default function Step1Page(): React.ReactElement {
@@ -34,21 +36,36 @@ export default function Step1Page(): React.ReactElement {
   const personalDataConsent = useFormStore((s) => s.personalDataConsent);
   const consentRecordedAt = useFormStore((s) => s.consentRecordedAt);
   const sessionId = useFormStore((s) => s.sessionId);
+  const kotShuffleOrder = useFormStore((s) => s.kotShuffleOrder);
+  const setKotShuffleOrder = useFormStore((s) => s.setKotShuffleOrder);
   const step1Data = useFormStore((s) => s.step1Data);
   const step2Data = useFormStore((s) => s.step2Data);
   const step3Data = useFormStore((s) => s.step3Data);
   const step4Data = useFormStore((s) => s.step4Data);
   const setStep1Data = useFormStore((s) => s.setStep1Data);
 
-  const questionsBySection = useMemo(() => {
-    const map = new Map<string, typeof KOT_QUESTIONS>();
-    for (const q of KOT_QUESTIONS) {
-      const list = map.get(q.section) ?? [];
-      list.push(q);
-      map.set(q.section, list);
+  useEffect(() => {
+    if (!sessionId) {
+      return;
     }
-    return Array.from(map.entries());
-  }, []);
+    if (!kotShuffleOrder || kotShuffleOrder.length !== KOT_STEP_QUESTION_COUNT) {
+      setKotShuffleOrder(seededShuffleKotKeys(sessionId));
+    }
+  }, [sessionId, kotShuffleOrder, setKotShuffleOrder]);
+
+  const orderedKeys = useMemo((): KotQuestionKey[] => {
+    if (kotShuffleOrder && kotShuffleOrder.length === KOT_STEP_QUESTION_COUNT) {
+      return kotShuffleOrder;
+    }
+    if (sessionId) {
+      return seededShuffleKotKeys(sessionId);
+    }
+    const keys: KotQuestionKey[] = [];
+    for (let i = 1; i <= KOT_STEP_QUESTION_COUNT; i += 1) {
+      keys.push(`q${String(i)}` as KotQuestionKey);
+    }
+    return keys;
+  }, [kotShuffleOrder, sessionId]);
 
   useEffect(() => {
     if (!isProfileReady(profileName, personalDataConsent, consentRecordedAt)) {
@@ -81,7 +98,7 @@ export default function Step1Page(): React.ReactElement {
         </div>
 
         <section className={`${questionCardSurfaceClass} mb-4 p-6 sm:px-8 sm:py-6`}>
-          <h2 className={stepQuestionTitleClass}>Интеллектуальный блок (сокращённый КОТ)</h2>
+          <h2 className={stepQuestionTitleClass}>Интеллектуальный блок (КОТ)</h2>
           <div className={`mt-3 space-y-2 ${stepSecondaryTextClass}`}>
             {KOT_INTRO_PARAGRAPHS.map((line) => (
               <p key={line}>{line}</p>
@@ -89,48 +106,40 @@ export default function Step1Page(): React.ReactElement {
           </div>
         </section>
 
-        <div className="space-y-6">
-          {questionsBySection.map(([section, items]) => (
-            <div key={section}>
-              <p className="mb-3 text-[15px] font-extrabold uppercase tracking-wide text-[#8C8C8C]">
-                {section}
-              </p>
-              <div className="space-y-4">
-                {items.map((q) => {
-                  const globalIndex = KOT_QUESTIONS.indexOf(q) + 1;
-                  const title = `${String(globalIndex)}. ${q.prompt}`;
-                  return (
-                    <QuestionCard key={q.key} title={title}>
-                      <div className="space-y-2">
-                        {q.options.map((opt) => {
-                          const inputId = `kot-${q.key}-${opt.id}`;
-                          const checked = step1Data[q.key] === opt.id;
-                          return (
-                            <label
-                              key={opt.id}
-                              htmlFor={inputId}
-                              className="flex cursor-pointer select-none items-start gap-3"
-                            >
-                              <input
-                                id={inputId}
-                                type="radio"
-                                name={q.key}
-                                value={opt.id}
-                                checked={checked}
-                                onChange={() => setChoice(q.key, opt.id)}
-                                className="mt-1 accent-[#00B596]"
-                              />
-                              <span>{opt.label}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </QuestionCard>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+        <div className="space-y-4">
+          {orderedKeys.map((questionKey, index) => {
+            const q = KOT_QUESTIONS_BY_KEY[questionKey];
+            const displayNum = index + 1;
+            const title = `${String(displayNum)}. ${q.prompt}`;
+            return (
+              <QuestionCard key={q.key} title={title}>
+                <div className="space-y-2">
+                  {q.options.map((opt) => {
+                    const inputId = `kot-${q.key}-${opt.id}`;
+                    const checked = step1Data[q.key] === opt.id;
+                    return (
+                      <label
+                        key={opt.id}
+                        htmlFor={inputId}
+                        className="flex cursor-pointer select-none items-start gap-3"
+                      >
+                        <input
+                          id={inputId}
+                          type="radio"
+                          name={q.key}
+                          value={opt.id}
+                          checked={checked}
+                          onChange={() => setChoice(q.key, opt.id)}
+                          className="mt-1 accent-[#00B596]"
+                        />
+                        <span>{opt.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </QuestionCard>
+            );
+          })}
         </div>
 
         <div className="mt-7 flex flex-wrap items-center justify-between gap-3">

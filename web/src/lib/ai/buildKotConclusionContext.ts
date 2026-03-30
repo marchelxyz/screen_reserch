@@ -15,6 +15,10 @@ export function buildKotConclusionContext(
   const education = sanitizeForAiInput(step4.education, 120);
   const book = sanitizeForAiInput(step4.favoriteBook, 120);
   const film = sanitizeForAiInput(step4.favoriteFilm, 120);
+  const hobby = sanitizeForAiInput(step4.hobby, 120);
+  const music = sanitizeForAiInput(step4.favoriteMusic, 120);
+  const leisure = sanitizeForAiInput(step4.leisureTime, 120);
+  const motto = sanitizeForAiInput(step4.lifeMotto, 120);
   return [
     `Имя_профиля: ${name}`,
     `Город: ${city}`,
@@ -23,5 +27,9 @@ export function buildKotConclusionContext(
     `Образование: ${education}`,
     `Книга: ${book}`,
     `Фильм: ${film}`,
+    `Хобби: ${hobby}`,
+    `Музыка: ${music}`,
+    `Свободное_время: ${leisure}`,
+    `Девиз_цитата: ${motto}`,
   ].join("\n");
 }

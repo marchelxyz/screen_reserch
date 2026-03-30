@@ -39,7 +39,11 @@ export function isStep4Complete(data: Step4Data): boolean {
     data.children.trim().length > 0 &&
     data.education.trim().length > 0 &&
     data.favoriteBook.trim().length > 0 &&
-    data.favoriteFilm.trim().length > 0
+    data.favoriteFilm.trim().length > 0 &&
+    data.hobby.trim().length > 0 &&
+    data.favoriteMusic.trim().length > 0 &&
+    data.leisureTime.trim().length > 0 &&
+    data.lifeMotto.trim().length > 0
   );
 }
 

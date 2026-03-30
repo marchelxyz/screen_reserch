@@ -11,18 +11,8 @@ import {
   stepSurfaceCardClass,
 } from "@/lib/stepPageTheme";
 import { TOTAL_QUESTIONS_COUNT, getAllAnsweredCount, isProfileReady } from "@/lib/progress";
-import { Step4Data, SubmissionStatus, useFormStore } from "@/store/useFormStore";
-
-function isStep4Complete(data: Step4Data): boolean {
-  return (
-    data.city.trim().length > 0 &&
-    data.familyStatus.trim().length > 0 &&
-    data.children.trim().length > 0 &&
-    data.education.trim().length > 0 &&
-    data.favoriteBook.trim().length > 0 &&
-    data.favoriteFilm.trim().length > 0
-  );
-}
+import { isStep4Complete } from "@/lib/validation/stepCompletion";
+import { SubmissionStatus, useFormStore } from "@/store/useFormStore";
 
 function getStatusText(status: SubmissionStatus): string {
   switch (status) {

@@ -3,6 +3,7 @@ import type { KotChoiceId, KotQuestionKey } from "@/lib/kot/step1Types";
 /**
  * Ключ правильных ответов для текущей батареи из 30 пунктов (варианты «1»…«4»).
  * Используется только на сервере для подсчёта сырого балла.
+ * При замене формулировок в `questions.ts` на лицензионные — обновите соответствующие значения здесь.
  */
 export const KOT_ANSWER_KEYS: Record<KotQuestionKey, KotChoiceId> = {
   q1: "1",
