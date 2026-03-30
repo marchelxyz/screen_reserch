@@ -45,7 +45,7 @@ export async function generateScreeningConclusion(input: {
       },
       body: JSON.stringify({
         model,
-        temperature: 0.35,
+        temperature: 0.3,
         response_format: OPENAI_JSON_RESPONSE_FORMAT,
         messages: [
           { role: "system", content: OPENAI_SYSTEM_PROMPT_KOT_CONCLUSION },
@@ -111,7 +111,7 @@ export async function generateScreeningConclusion(input: {
 
   const hiring =
     typeof parsed.hiringRecommendations === "string" && parsed.hiringRecommendations.length > 0
-      ? parsed.hiringRecommendations.slice(0, 12000)
+      ? parsed.hiringRecommendations.slice(0, 16000)
       : null;
 
   screeningServerLog("openai", "success", {
