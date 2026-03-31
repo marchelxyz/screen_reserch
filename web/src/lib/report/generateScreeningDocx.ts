@@ -270,6 +270,15 @@ function formatKotAnswerForDocx(spec: KotOfficialSpec, value: string | null): st
   return value;
 }
 
+/** Полный текст задания для отчёта (в т. ч. пары в колонках для вопросов 8 и 13). */
+function kotPromptForReport(spec: KotOfficialSpec): string {
+  if (spec.kind === "text" && spec.pairColumnRows !== undefined && spec.pairColumnRows.length > 0) {
+    const lines = spec.pairColumnRows.map((r) => `${r.left}  ${r.right}`).join("\n");
+    return `${spec.prompt}\n${lines}`;
+  }
+  return spec.prompt;
+}
+
 function buildKotAnswersTable(step1: Step1Data): Table {
   const rows: TableRow[] = [
     new TableRow({
@@ -291,7 +300,7 @@ function buildKotAnswersTable(step1: Step1Data): Table {
       new TableRow({
         children: [
           cell(key.replace("q", "")),
-          cell(truncate(spec.prompt, 400)),
+          cell(truncate(kotPromptForReport(spec), 400)),
           cell(truncate(chosenLabel, 120)),
           cell(ok),
         ],
