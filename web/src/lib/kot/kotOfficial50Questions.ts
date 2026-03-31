@@ -8,6 +8,12 @@ export type KotMcOption = {
 /** Встроенная SVG-схема к заданию (см. `KotQuestionFigure`). */
 export type KotFigureSlot = "q17" | "q29" | "q32" | "q50";
 
+/** Пара строк для отображения в двух колонках (задания 8, 13). */
+export type KotPairColumnRow = {
+  readonly left: string;
+  readonly right: string;
+};
+
 export type KotOfficialSpec =
   | {
       readonly key: KotQuestionKey;
@@ -22,6 +28,7 @@ export type KotOfficialSpec =
       readonly prompt: string;
       readonly placeholder?: string;
       readonly figure?: KotFigureSlot;
+      readonly pairColumnRows?: readonly KotPairColumnRow[];
     };
 
 function mc(
@@ -39,11 +46,18 @@ function text(
   key: KotQuestionKey,
   prompt: string,
   placeholder?: string,
-  figure?: KotFigureSlot
+  figure?: KotFigureSlot,
+  pairColumnRows?: readonly KotPairColumnRow[]
 ): KotOfficialSpec {
-  return figure !== undefined
-    ? { key, kind: "text", prompt, placeholder, figure }
-    : { key, kind: "text", prompt, placeholder };
+  if (figure !== undefined) {
+    return pairColumnRows !== undefined
+      ? { key, kind: "text", prompt, placeholder, figure, pairColumnRows }
+      : { key, kind: "text", prompt, placeholder, figure };
+  }
+  if (pairColumnRows !== undefined) {
+    return { key, kind: "text", prompt, placeholder, pairColumnRows };
+  }
+  return { key, kind: "text", prompt, placeholder };
 }
 
 /**
@@ -98,8 +112,16 @@ export const KOT_OFFICIAL_QUESTIONS_ORDERED: readonly KotOfficialSpec[] = [
   ]),
   text(
     "q8",
-    "Сколько из приведённых ниже пар слов являются полностью идентичными?\nSharp M.C. Sharp M.C.\nFilder E.H. Filder E.N.\nConnor M.G. Conner M.G.\nWoesner O.W. Woerner O.W.\nSoderquist P.E. Soderquist B.E.",
-    "число"
+    "Сколько из приведённых ниже пар слов являются полностью идентичными?",
+    "число",
+    undefined,
+    [
+      { left: "Sharp M.C.", right: "Sharp M.C." },
+      { left: "Filder E.H.", right: "Filder E.N." },
+      { left: "Connor M.G.", right: "Conner M.G." },
+      { left: "Woesner O.W.", right: "Woerner O.W." },
+      { left: "Soderquist P.E.", right: "Soderquist B.E." },
+    ]
   ),
   mc("q9", "«Ясный» является противоположным по смыслу слову:", [
     { id: "1", label: "очевидный" },
@@ -125,8 +147,17 @@ export const KOT_OFFICIAL_QUESTIONS_ORDERED: readonly KotOfficialSpec[] = [
   ),
   text(
     "q13",
-    "Сколько из этих 6 пар чисел являются полностью одинаковыми?\n5296 5296\n66986 69686\n834426 834426\n7354256 7354256\n61197172 61197172\n83238224 83238234",
-    "число"
+    "Сколько из этих 6 пар чисел являются полностью одинаковыми?",
+    "число",
+    undefined,
+    [
+      { left: "5296", right: "5296" },
+      { left: "66986", right: "69686" },
+      { left: "834426", right: "834426" },
+      { left: "7354256", right: "7354256" },
+      { left: "61197172", right: "61197172" },
+      { left: "83238224", right: "83238234" },
+    ]
   ),
   mc("q14", "«Близкий» является противоположным слову:", [
     { id: "1", label: "дружеский" },

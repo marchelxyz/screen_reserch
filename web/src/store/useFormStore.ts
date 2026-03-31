@@ -78,6 +78,11 @@ type FormStore = {
   personalDataConsent: boolean;
   /** ISO 8601 (UTC), выставляется при personalDataConsent === true, сбрасывается при снятии галочки. */
   consentRecordedAt: string | null;
+  /**
+   * ISO 8601 (UTC): момент нажатия «СТАРТ» на шаге КОТ; до этого ответы недоступны.
+   * Таймер 20 минут отсчитывается от этого момента.
+   */
+  kotTimerStartedAt: string | null;
   step1Data: Step1Data;
   step2Data: Step2Data;
   step3Data: Step3Data;
@@ -104,6 +109,9 @@ type FormStore = {
   leaveTestSession: () => void;
   /** Полный сброс после завершения (кнопка «На главную»). */
   resetAfterTestFlow: () => void;
+
+  /** Запуск отсчёта 20 минут для КОТ (после прочтения инструкций). */
+  startKotTimer: () => void;
 
   submitData: () => Promise<void>;
 };
@@ -182,6 +190,7 @@ export const useFormStore = create<FormStore>()(
       profileName: "",
       personalDataConsent: false,
       consentRecordedAt: null,
+      kotTimerStartedAt: null,
       step1Data: defaultStep1Data,
       step2Data: defaultStep2Data,
       step3Data: defaultStep3Data,
@@ -207,6 +216,7 @@ export const useFormStore = create<FormStore>()(
           step2Data: { ...defaultStep2Data },
           step3Data: { ...defaultStep3Data },
           step4Data: { ...defaultStep4Data },
+          kotTimerStartedAt: null,
         }),
 
       beginTestSession: () => {
@@ -217,6 +227,7 @@ export const useFormStore = create<FormStore>()(
         set({
           sessionId,
           ...resetStepAnswers(),
+          kotTimerStartedAt: null,
           submissionStatus: "idle",
           submitError: null,
         });
@@ -232,6 +243,7 @@ export const useFormStore = create<FormStore>()(
         set({
           sessionId: null,
           ...resetStepAnswers(),
+          kotTimerStartedAt: null,
           submissionStatus: "idle",
           submitError: null,
         });
@@ -245,10 +257,13 @@ export const useFormStore = create<FormStore>()(
         set({
           sessionId: null,
           ...resetStepAnswers(),
+          kotTimerStartedAt: null,
           submissionStatus: "idle",
           submitError: null,
         });
       },
+
+      startKotTimer: () => set({ kotTimerStartedAt: new Date().toISOString() }),
 
       submitData: async () => {
         const state = get();
@@ -380,12 +395,13 @@ export const useFormStore = create<FormStore>()(
       },
     }),
     {
-      name: "profile-uspese-form-v10-kot50",
+      name: "profile-uspese-form-v11-kot50",
       partialize: (state) => ({
         sessionId: state.sessionId,
         profileName: state.profileName,
         personalDataConsent: state.personalDataConsent,
         consentRecordedAt: state.consentRecordedAt,
+        kotTimerStartedAt: state.kotTimerStartedAt,
         step1Data: state.step1Data,
         step2Data: state.step2Data,
         step3Data: state.step3Data,
