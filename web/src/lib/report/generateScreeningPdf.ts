@@ -1,6 +1,7 @@
 import { readFileSync } from "fs";
 import path from "path";
-import { PDFDocument, type PDFFont, type PDFPage, rgb } from "pdf-lib";
+import { PDFDocument, type PDFFont, type PDFImage, type PDFPage, rgb } from "pdf-lib";
+import sharp from "sharp";
 
 import {
   KOT_OFFICIAL_QUESTIONS_ORDERED,
@@ -41,16 +42,26 @@ const A4_W = 595.28;
 const A4_H = 841.89;
 const M = 48;
 const FOOTER_H = 36;
-const HEADER_STRIP = 44;
+/** Высота блока шапки (логотип + заголовок) + полоска акцента */
+const HEADER_BLOCK_H = 52;
+const HEADER_ACCENT_STRIPE = 3;
 
-/** Фирменный акцент (#00B596) */
+/**
+ * Палитра как в приложении: StepLayout / stepPageTheme / globals.css
+ * — фон #F2F2F2, карточки/бордеры #DDDDDD, заголовки #8C8C8C, текст #5F5E5E, акцент #00B596
+ */
 const BRAND = rgb(0 / 255, 181 / 255, 150 / 255);
-const BRAND_DEEP = rgb(0 / 255, 140 / 255, 118 / 255);
-const PAGE_BG = rgb(0.97, 0.97, 0.97);
+const PAGE_BG_OUTER = rgb(242 / 255, 242 / 255, 242 / 255);
 const CARD_BG = rgb(1, 1, 1);
-const TEXT = rgb(0.2, 0.2, 0.2);
-const TEXT_MUTED = rgb(0.45, 0.45, 0.45);
-const BORDER = rgb(0.88, 0.88, 0.88);
+const HEADER_BAND_BG = rgb(0.99, 0.99, 0.99);
+const SECTION_TITLE = rgb(140 / 255, 140 / 255, 140 / 255);
+const TEXT = rgb(95 / 255, 94 / 255, 94 / 255);
+const TEXT_LABEL = rgb(79 / 255, 79 / 255, 79 / 255);
+const TEXT_MUTED = rgb(140 / 255, 140 / 255, 140 / 255);
+const BORDER = rgb(221 / 255, 221 / 255, 221 / 255);
+/** Лёгкий «блик» как radial-gradient на StepLayout */
+const BRAND_GLOW_SOFT = rgb(0.75, 0.94, 0.9);
+const WHITE_MIST = rgb(1, 1, 1);
 
 const STEP3_TEXTS: { id: keyof Step3Data; title: string }[] = [
   { id: "q1", title: "Я обычно сохраняю позитивный настрой на работе." },
@@ -67,6 +78,23 @@ const STEP3_TEXTS: { id: keyof Step3Data; title: string }[] = [
 
 function fontPath(file: string): string {
   return path.join(process.cwd(), "src", "assets", "report-fonts", file);
+}
+
+function brandingLogoSvgPath(): string {
+  return path.join(process.cwd(), "public", "branding", "logo-placeholder.svg");
+}
+
+/** Растр того же SVG, что в шапке сайта — для встраивания в PDF. */
+async function embedBrandingLogo(doc: PDFDocument): Promise<PDFImage | null> {
+  try {
+    const png = await sharp(readFileSync(brandingLogoSvgPath()))
+      .resize({ height: 160, fit: "inside" })
+      .png()
+      .toBuffer();
+    return await doc.embedPng(png);
+  } catch {
+    return null;
+  }
 }
 
 function likertLabel(a: LikertAnswer): string {
@@ -144,22 +172,31 @@ class PdfWriter {
   readonly doc: PDFDocument;
   readonly font: PDFFont;
   readonly fontBold: PDFFont;
+  readonly logo: PDFImage | null;
   page!: PDFPage;
   pageNum = 0;
   y = 0;
 
-  constructor(doc: PDFDocument, font: PDFFont, fontBold: PDFFont) {
+  constructor(
+    doc: PDFDocument,
+    font: PDFFont,
+    fontBold: PDFFont,
+    logo: PDFImage | null
+  ) {
     this.doc = doc;
     this.font = font;
     this.fontBold = fontBold;
+    this.logo = logo;
   }
 
   addPage(continuation: boolean): void {
     this.page = this.doc.addPage([A4_W, A4_H]);
     this.pageNum += 1;
     this.drawPageBackground();
-    this.drawHeader(continuation);
-    this.y = A4_H - M - HEADER_STRIP - 14;
+    const innerTop = A4_H - (M - 12);
+    this.drawHeader(continuation, innerTop);
+    const headerTotal = HEADER_BLOCK_H + HEADER_ACCENT_STRIPE;
+    this.y = innerTop - headerTotal - 18;
   }
 
   private drawPageBackground(): void {
@@ -168,7 +205,26 @@ class PdfWriter {
       y: 0,
       width: A4_W,
       height: A4_H,
-      color: PAGE_BG,
+      color: PAGE_BG_OUTER,
+    });
+    const k = A4_W / 595.28;
+    this.page.drawEllipse({
+      x: A4_W + 40 * k,
+      y: -90 * k,
+      xScale: 210 * k,
+      yScale: 210 * k,
+      color: BRAND_GLOW_SOFT,
+      opacity: 0.35,
+      borderOpacity: 0,
+    });
+    this.page.drawEllipse({
+      x: 80 * k,
+      y: A4_H - 100 * k,
+      xScale: 160 * k,
+      yScale: 55 * k,
+      color: WHITE_MIST,
+      opacity: 0.45,
+      borderOpacity: 0,
     });
     this.page.drawRectangle({
       x: M - 12,
@@ -177,42 +233,69 @@ class PdfWriter {
       height: A4_H - 2 * (M - 12),
       color: CARD_BG,
       borderColor: BORDER,
-      borderWidth: 0.5,
+      borderWidth: 1,
     });
     this.page.drawRectangle({
       x: M - 12,
       y: M - 12,
-      width: 5,
+      width: 4,
       height: A4_H - 2 * (M - 12),
       color: BRAND,
     });
   }
 
-  private drawHeader(continuation: boolean): void {
+  private drawHeader(continuation: boolean, innerTop: number): void {
+    const cardW = A4_W - 2 * (M - 12);
+    const bandBottom = innerTop - HEADER_BLOCK_H;
     this.page.drawRectangle({
       x: M - 12,
-      y: A4_H - (M - 12) - HEADER_STRIP,
-      width: A4_W - 2 * (M - 12),
-      height: HEADER_STRIP,
-      color: BRAND,
+      y: bandBottom,
+      width: cardW,
+      height: HEADER_BLOCK_H,
+      color: HEADER_BAND_BG,
+      borderColor: BORDER,
+      borderWidth: 0.4,
     });
-    const title = continuation
-      ? "Профиль Успеха — отчёт по скринингу (продолжение)"
-      : "Профиль Успеха — отчёт по скринингу";
+
+    let textX = M + 8;
+    const logoTargetH = 36;
+    if (this.logo !== null) {
+      const scale = logoTargetH / this.logo.height;
+      const logoW = this.logo.width * scale;
+      const logoY = bandBottom + (HEADER_BLOCK_H - logoTargetH) / 2;
+      this.page.drawImage(this.logo, {
+        x: M + 10,
+        y: logoY,
+        width: logoW,
+        height: logoTargetH,
+      });
+      textX = M + 10 + logoW + 14;
+    }
+
+    const title = continuation ? "Отчёт по скринингу (продолжение)" : "Профиль Успеха";
+    const titleSize = continuation ? 12.5 : 15.5;
     this.page.drawText(title, {
-      x: M + 8,
-      y: A4_H - (M - 12) - HEADER_STRIP + 14,
-      size: 13,
+      x: textX,
+      y: bandBottom + HEADER_BLOCK_H - 20,
+      size: titleSize,
       font: this.fontBold,
-      color: rgb(1, 1, 1),
+      color: SECTION_TITLE,
     });
-    const sub = "HR-скрининг кандидата";
+    const sub = continuation ? "Профиль Успеха" : "Отчёт по HR-скринингу кандидата";
     this.page.drawText(sub, {
-      x: M + 8,
-      y: A4_H - (M - 12) - HEADER_STRIP + 2,
-      size: 8.5,
+      x: textX,
+      y: bandBottom + HEADER_BLOCK_H - 36,
+      size: 9,
       font: this.font,
-      color: rgb(0.92, 0.98, 0.96),
+      color: TEXT,
+    });
+
+    this.page.drawRectangle({
+      x: M - 12,
+      y: bandBottom - HEADER_ACCENT_STRIPE,
+      width: cardW,
+      height: HEADER_ACCENT_STRIPE,
+      color: BRAND,
     });
   }
 
@@ -242,7 +325,7 @@ class PdfWriter {
       y: this.y - size,
       size,
       font: this.fontBold,
-      color: BRAND_DEEP,
+      color: SECTION_TITLE,
     });
     this.y -= size + 12;
   }
@@ -542,11 +625,12 @@ export async function generateScreeningPdfBuffer(input: ScreeningPdfInput): Prom
   const fontBoldBytes = readFileSync(fontPath("NotoSans-Bold.ttf"));
   const font = await doc.embedFont(fontBytes, { subset: true });
   const fontBold = await doc.embedFont(fontBoldBytes, { subset: true });
+  const logoImage = await embedBrandingLogo(doc);
 
-  const w = new PdfWriter(doc, font, fontBold);
+  const w = new PdfWriter(doc, font, fontBold, logoImage);
   w.addPage(false);
 
-  w.textLine(`Кандидат: ${truncate(input.profileName, 120)}`, 11, true);
+  w.textLine(`Кандидат: ${truncate(input.profileName, 120)}`, 11, true, TEXT_LABEL);
   w.textLine(`Идентификатор сессии: ${input.sessionId}`, 9, false, TEXT_MUTED);
   w.spacer(10);
 
