@@ -1,12 +1,14 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import type { GerchikovStep2Data } from "@/lib/gerchikov/step2Types";
 import {
   createEmptyKotStep1Data,
+  type KotQuestionKey,
   type KotStep1Data,
 } from "@/lib/kot/step1Types";
+import { getFormPersistStateStorage } from "@/store/formPersistStorage";
 import { clientSessionRef, screeningClientLog } from "@/lib/logging/screeningClientLog";
 import {
   getStep1AnsweredCount,
@@ -94,6 +96,8 @@ type FormStore = {
   setProfileName: (name: string) => void;
   setPersonalDataConsent: (consent: boolean) => void;
   setStep1Data: (data: Step1Data) => void;
+  /** Одно поле КОТ без замыкания на весь step1Data (удобно для memo-карточек). */
+  patchStep1Answer: (key: KotQuestionKey, value: string) => void;
   setStep2Data: (data: Step2Data) => void;
   setStep3Data: (data: Step3Data) => void;
   setStep4Data: (data: Step4Data) => void;
@@ -206,6 +210,10 @@ export const useFormStore = create<FormStore>()(
           consentRecordedAt: consent ? new Date().toISOString() : null,
         }),
       setStep1Data: (data) => set({ step1Data: data }),
+      patchStep1Answer: (key, value) =>
+        set((state) => ({
+          step1Data: { ...state.step1Data, [key]: value },
+        })),
       setStep2Data: (data) => set({ step2Data: data }),
       setStep3Data: (data) => set({ step3Data: data }),
       setStep4Data: (data) => set({ step4Data: data }),
@@ -396,6 +404,7 @@ export const useFormStore = create<FormStore>()(
     }),
     {
       name: "profile-uspese-form-v11-kot50",
+      storage: createJSONStorage(getFormPersistStateStorage),
       partialize: (state) => ({
         sessionId: state.sessionId,
         profileName: state.profileName,
