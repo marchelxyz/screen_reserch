@@ -1,7 +1,6 @@
-import { readFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import path from "path";
 import { PDFDocument, type PDFFont, type PDFImage, type PDFPage, rgb } from "pdf-lib";
-import sharp from "sharp";
 
 import {
   KOT_OFFICIAL_QUESTIONS_ORDERED,
@@ -76,22 +75,62 @@ const STEP3_TEXTS: { id: keyof Step3Data; title: string }[] = [
   { id: "q10", title: "Я избегаю конфликтов и умею их разруливать." },
 ];
 
+/** В Docker/монорепо cwd может отличаться — ищем каталог со шрифтами. */
+function resolveReportFontsDir(): string {
+  const cwd = process.cwd();
+  const direct = path.join(cwd, "src", "assets", "report-fonts");
+  if (existsSync(path.join(direct, "NotoSans-Regular.ttf"))) {
+    return direct;
+  }
+  const parent = path.join(cwd, "..", "src", "assets", "report-fonts");
+  if (existsSync(path.join(parent, "NotoSans-Regular.ttf"))) {
+    return parent;
+  }
+  return direct;
+}
+
 function fontPath(file: string): string {
-  return path.join(process.cwd(), "src", "assets", "report-fonts", file);
+  return path.join(resolveReportFontsDir(), file);
 }
 
 function brandingLogoSvgPath(): string {
-  return path.join(process.cwd(), "public", "branding", "logo-placeholder.svg");
+  const cwd = process.cwd();
+  const candidates = [
+    path.join(cwd, "public", "branding", "logo-placeholder.svg"),
+    path.join(cwd, "..", "public", "branding", "logo-placeholder.svg"),
+  ];
+  for (const p of candidates) {
+    if (existsSync(p)) {
+      return p;
+    }
+  }
+  return candidates[0];
 }
 
-/** Растр того же SVG, что в шапке сайта — для встраивания в PDF. */
-async function embedBrandingLogo(doc: PDFDocument): Promise<PDFImage | null> {
+/**
+ * В SVG логотипа уже встроен PNG (как в браузере). Без sharp — надёжнее в Alpine/Docker.
+ */
+function decodeEmbeddedPngFromBrandingSvg(): Buffer | null {
   try {
-    const png = await sharp(readFileSync(brandingLogoSvgPath()))
-      .resize({ height: 160, fit: "inside" })
-      .png()
-      .toBuffer();
-    return await doc.embedPng(png);
+    const svg = readFileSync(brandingLogoSvgPath(), "utf8");
+    const m = svg.match(/data:image\/png;base64,([^"'>\s]+)/);
+    if (m?.[1] === undefined || m[1].length === 0) {
+      return null;
+    }
+    return Buffer.from(m[1], "base64");
+  } catch {
+    return null;
+  }
+}
+
+/** Растр из того же файла, что в шапке сайта — для встраивания в PDF. */
+async function embedBrandingLogo(doc: PDFDocument): Promise<PDFImage | null> {
+  const buf = decodeEmbeddedPngFromBrandingSvg();
+  if (buf === null || buf.length === 0) {
+    return null;
+  }
+  try {
+    return await doc.embedPng(buf);
   } catch {
     return null;
   }
@@ -623,8 +662,9 @@ export async function generateScreeningPdfBuffer(input: ScreeningPdfInput): Prom
   const doc = await PDFDocument.create();
   const fontBytes = readFileSync(fontPath("NotoSans-Regular.ttf"));
   const fontBoldBytes = readFileSync(fontPath("NotoSans-Bold.ttf"));
-  const font = await doc.embedFont(fontBytes, { subset: true });
-  const fontBold = await doc.embedFont(fontBoldBytes, { subset: true });
+  /** subset: false — меньше сюрпризов fontkit на проде (размер PDF чуть больше). */
+  const font = await doc.embedFont(fontBytes, { subset: false });
+  const fontBold = await doc.embedFont(fontBoldBytes, { subset: false });
   const logoImage = await embedBrandingLogo(doc);
 
   const w = new PdfWriter(doc, font, fontBold, logoImage);
