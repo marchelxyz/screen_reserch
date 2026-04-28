@@ -192,10 +192,12 @@ export async function POST(
       durationMs: Date.now() - pdfStarted,
     });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
     screeningServerLog("submit", "pdf_failed", {
       sessionRef,
       durationMs: Date.now() - pdfStarted,
       errorName: err instanceof Error ? err.name : "unknown",
+      errorMessage: msg.length > 600 ? `${msg.slice(0, 600)}…` : msg,
     });
     reportPdfBuffer = null;
   }

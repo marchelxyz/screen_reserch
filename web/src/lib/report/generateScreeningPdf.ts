@@ -1,4 +1,4 @@
-import { readFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import path from "path";
 import { PDFDocument, type PDFFont, type PDFPage, rgb } from "pdf-lib";
 
@@ -65,8 +65,21 @@ const STEP3_TEXTS: { id: keyof Step3Data; title: string }[] = [
   { id: "q10", title: "Я избегаю конфликтов и умею их разруливать." },
 ];
 
+function resolveReportFontsDir(): string {
+  const cwd = process.cwd();
+  const direct = path.join(cwd, "src", "assets", "report-fonts");
+  if (existsSync(path.join(direct, "NotoSans-Regular.ttf"))) {
+    return direct;
+  }
+  const parent = path.join(cwd, "..", "src", "assets", "report-fonts");
+  if (existsSync(path.join(parent, "NotoSans-Regular.ttf"))) {
+    return parent;
+  }
+  return direct;
+}
+
 function fontPath(file: string): string {
-  return path.join(process.cwd(), "src", "assets", "report-fonts", file);
+  return path.join(resolveReportFontsDir(), file);
 }
 
 function likertLabel(a: LikertAnswer): string {
@@ -540,8 +553,8 @@ export async function generateScreeningPdfBuffer(input: ScreeningPdfInput): Prom
   const doc = await PDFDocument.create();
   const fontBytes = readFileSync(fontPath("NotoSans-Regular.ttf"));
   const fontBoldBytes = readFileSync(fontPath("NotoSans-Bold.ttf"));
-  const font = await doc.embedFont(fontBytes, { subset: true });
-  const fontBold = await doc.embedFont(fontBoldBytes, { subset: true });
+  const font = await doc.embedFont(fontBytes, { subset: false });
+  const fontBold = await doc.embedFont(fontBoldBytes, { subset: false });
 
   const w = new PdfWriter(doc, font, fontBold);
   w.addPage(false);
