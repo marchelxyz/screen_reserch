@@ -193,11 +193,18 @@ export async function POST(
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
+    const stack =
+      err instanceof Error && err.stack !== undefined
+        ? err.stack.length > 1200
+          ? `${err.stack.slice(0, 1200)}…`
+          : err.stack
+        : undefined;
     screeningServerLog("submit", "pdf_failed", {
       sessionRef,
       durationMs: Date.now() - pdfStarted,
       errorName: err instanceof Error ? err.name : "unknown",
       errorMessage: msg.length > 600 ? `${msg.slice(0, 600)}…` : msg,
+      ...(stack !== undefined ? { errorStack: stack } : {}),
     });
     reportPdfBuffer = null;
   }
