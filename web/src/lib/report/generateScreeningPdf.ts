@@ -65,13 +65,20 @@ const STEP3_TEXTS: { id: keyof Step3Data; title: string }[] = [
   { id: "q10", title: "Я избегаю конфликтов и умею их разруливать." },
 ];
 
-/** Docker кладёт TTF в /app/report-fonts; в монорепо cwd может быть выше web/. */
+/**
+ * Порядок важен: `public/report-fonts` всегда в деплое Next (и Nixpacks, и Docker).
+ * Далее — ./report-fonts из Dockerfile, затем src/assets.
+ */
 function resolveReportFontsDir(): string {
   const cwd = process.cwd();
   const candidates = [
+    path.join(cwd, "public", "report-fonts"),
+    path.join(cwd, "web", "public", "report-fonts"),
     path.join(cwd, "report-fonts"),
     path.join(cwd, "src", "assets", "report-fonts"),
     path.join(cwd, "web", "src", "assets", "report-fonts"),
+    path.join(cwd, "..", "public", "report-fonts"),
+    path.join(cwd, "..", "web", "public", "report-fonts"),
     path.join(cwd, "..", "src", "assets", "report-fonts"),
     path.join(cwd, "..", "web", "src", "assets", "report-fonts"),
   ];
@@ -563,8 +570,20 @@ export async function generateScreeningPdfBuffer(input: ScreeningPdfInput): Prom
   const doc = await PDFDocument.create();
   const fontBytes = readFileSync(regularFile);
   const fontBoldBytes = readFileSync(boldFile);
-  const font = await doc.embedFont(fontBytes, { subset: false });
-  const fontBold = await doc.embedFont(fontBoldBytes, { subset: false });
+  let font: PDFFont;
+  let fontBold: PDFFont;
+  try {
+    font = await doc.embedFont(fontBytes, { subset: false });
+    fontBold = await doc.embedFont(fontBoldBytes, { subset: false });
+  } catch (first) {
+    try {
+      font = await doc.embedFont(fontBytes, { subset: true });
+      fontBold = await doc.embedFont(fontBoldBytes, { subset: true });
+    } catch {
+      const m = first instanceof Error ? first.message : String(first);
+      throw new Error(`PDF: embedFont (subset false/true) — ${m}`);
+    }
+  }
 
   const w = new PdfWriter(doc, font, fontBold);
   w.addPage(false);
@@ -671,6 +690,12 @@ export async function generateScreeningPdfBuffer(input: ScreeningPdfInput): Prom
 
   w.drawFooter();
 
-  const pdfBytes = await doc.save();
+  let pdfBytes: Uint8Array;
+  try {
+    pdfBytes = await doc.save();
+  } catch (err) {
+    const m = err instanceof Error ? err.message : String(err);
+    throw new Error(`PDF: doc.save — ${m}`);
+  }
   return Buffer.from(pdfBytes);
 }
