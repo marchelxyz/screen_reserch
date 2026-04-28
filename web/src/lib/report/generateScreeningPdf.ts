@@ -65,21 +65,22 @@ const STEP3_TEXTS: { id: keyof Step3Data; title: string }[] = [
   { id: "q10", title: "Я избегаю конфликтов и умею их разруливать." },
 ];
 
+/** Docker кладёт TTF в /app/report-fonts; в монорепо cwd может быть выше web/. */
 function resolveReportFontsDir(): string {
   const cwd = process.cwd();
-  const direct = path.join(cwd, "src", "assets", "report-fonts");
-  if (existsSync(path.join(direct, "NotoSans-Regular.ttf"))) {
-    return direct;
+  const candidates = [
+    path.join(cwd, "report-fonts"),
+    path.join(cwd, "src", "assets", "report-fonts"),
+    path.join(cwd, "web", "src", "assets", "report-fonts"),
+    path.join(cwd, "..", "src", "assets", "report-fonts"),
+    path.join(cwd, "..", "web", "src", "assets", "report-fonts"),
+  ];
+  for (const dir of candidates) {
+    if (existsSync(path.join(dir, "NotoSans-Regular.ttf"))) {
+      return dir;
+    }
   }
-  const parent = path.join(cwd, "..", "src", "assets", "report-fonts");
-  if (existsSync(path.join(parent, "NotoSans-Regular.ttf"))) {
-    return parent;
-  }
-  return direct;
-}
-
-function fontPath(file: string): string {
-  return path.join(resolveReportFontsDir(), file);
+  return candidates[0];
 }
 
 function likertLabel(a: LikertAnswer): string {
@@ -550,9 +551,18 @@ function drawKotTableRow(
 
 /** Публичный API: единый PDF вместо Word, кириллица и фирменный макет. */
 export async function generateScreeningPdfBuffer(input: ScreeningPdfInput): Promise<Buffer> {
+  const fontsDir = resolveReportFontsDir();
+  const regularFile = path.join(fontsDir, "NotoSans-Regular.ttf");
+  const boldFile = path.join(fontsDir, "NotoSans-Bold.ttf");
+  if (!existsSync(regularFile) || !existsSync(boldFile)) {
+    throw new Error(
+      `PDF: нет файлов шрифтов в ${fontsDir} (cwd=${process.cwd()})`
+    );
+  }
+
   const doc = await PDFDocument.create();
-  const fontBytes = readFileSync(fontPath("NotoSans-Regular.ttf"));
-  const fontBoldBytes = readFileSync(fontPath("NotoSans-Bold.ttf"));
+  const fontBytes = readFileSync(regularFile);
+  const fontBoldBytes = readFileSync(boldFile);
   const font = await doc.embedFont(fontBytes, { subset: false });
   const fontBold = await doc.embedFont(fontBoldBytes, { subset: false });
 
