@@ -58,9 +58,6 @@ const TEXT = rgb(95 / 255, 94 / 255, 94 / 255);
 const TEXT_LABEL = rgb(79 / 255, 79 / 255, 79 / 255);
 const TEXT_MUTED = rgb(140 / 255, 140 / 255, 140 / 255);
 const BORDER = rgb(221 / 255, 221 / 255, 221 / 255);
-/** Лёгкий «блик» как radial-gradient на StepLayout */
-const BRAND_GLOW_SOFT = rgb(0.75, 0.94, 0.9);
-const WHITE_MIST = rgb(1, 1, 1);
 
 const STEP3_TEXTS: { id: keyof Step3Data; title: string }[] = [
   { id: "q1", title: "Я обычно сохраняю позитивный настрой на работе." },
@@ -75,29 +72,31 @@ const STEP3_TEXTS: { id: keyof Step3Data; title: string }[] = [
   { id: "q10", title: "Я избегаю конфликтов и умею их разруливать." },
 ];
 
-/** В Docker/монорепо cwd может отличаться — ищем каталог со шрифтами. */
+/** В Docker/монорепо/корне репозитория cwd может отличаться — ищем каталог со шрифтами. */
 function resolveReportFontsDir(): string {
   const cwd = process.cwd();
-  const direct = path.join(cwd, "src", "assets", "report-fonts");
-  if (existsSync(path.join(direct, "NotoSans-Regular.ttf"))) {
-    return direct;
+  const candidates = [
+    path.join(cwd, "report-fonts"),
+    path.join(cwd, "src", "assets", "report-fonts"),
+    path.join(cwd, "web", "src", "assets", "report-fonts"),
+    path.join(cwd, "..", "src", "assets", "report-fonts"),
+    path.join(cwd, "..", "web", "src", "assets", "report-fonts"),
+  ];
+  for (const dir of candidates) {
+    if (existsSync(path.join(dir, "NotoSans-Regular.ttf"))) {
+      return dir;
+    }
   }
-  const parent = path.join(cwd, "..", "src", "assets", "report-fonts");
-  if (existsSync(path.join(parent, "NotoSans-Regular.ttf"))) {
-    return parent;
-  }
-  return direct;
-}
-
-function fontPath(file: string): string {
-  return path.join(resolveReportFontsDir(), file);
+  return candidates[0];
 }
 
 function brandingLogoSvgPath(): string {
   const cwd = process.cwd();
   const candidates = [
     path.join(cwd, "public", "branding", "logo-placeholder.svg"),
+    path.join(cwd, "web", "public", "branding", "logo-placeholder.svg"),
     path.join(cwd, "..", "public", "branding", "logo-placeholder.svg"),
+    path.join(cwd, "..", "web", "public", "branding", "logo-placeholder.svg"),
   ];
   for (const p of candidates) {
     if (existsSync(p)) {
@@ -245,25 +244,6 @@ class PdfWriter {
       width: A4_W,
       height: A4_H,
       color: PAGE_BG_OUTER,
-    });
-    const k = A4_W / 595.28;
-    this.page.drawEllipse({
-      x: A4_W + 40 * k,
-      y: -90 * k,
-      xScale: 210 * k,
-      yScale: 210 * k,
-      color: BRAND_GLOW_SOFT,
-      opacity: 0.35,
-      borderOpacity: 0,
-    });
-    this.page.drawEllipse({
-      x: 80 * k,
-      y: A4_H - 100 * k,
-      xScale: 160 * k,
-      yScale: 55 * k,
-      color: WHITE_MIST,
-      opacity: 0.45,
-      borderOpacity: 0,
     });
     this.page.drawRectangle({
       x: M - 12,
@@ -659,9 +639,18 @@ function drawKotTableRow(
 
 /** Публичный API: единый PDF вместо Word, кириллица и фирменный макет. */
 export async function generateScreeningPdfBuffer(input: ScreeningPdfInput): Promise<Buffer> {
+  const fontsDir = resolveReportFontsDir();
+  const regularFile = path.join(fontsDir, "NotoSans-Regular.ttf");
+  const boldFile = path.join(fontsDir, "NotoSans-Bold.ttf");
+  if (!existsSync(regularFile) || !existsSync(boldFile)) {
+    throw new Error(
+      `PDF: нет файлов шрифтов в ${fontsDir} (cwd=${process.cwd()})`
+    );
+  }
+
   const doc = await PDFDocument.create();
-  const fontBytes = readFileSync(fontPath("NotoSans-Regular.ttf"));
-  const fontBoldBytes = readFileSync(fontPath("NotoSans-Bold.ttf"));
+  const fontBytes = readFileSync(regularFile);
+  const fontBoldBytes = readFileSync(boldFile);
   /** subset: false — меньше сюрпризов fontkit на проде (размер PDF чуть больше). */
   const font = await doc.embedFont(fontBytes, { subset: false });
   const fontBold = await doc.embedFont(fontBoldBytes, { subset: false });
