@@ -16,8 +16,8 @@ export type ScreeningReportEmailPayload = {
   kotIpNormNote: string;
   conclusionText: string | null;
   hiringRecommendations: string | null;
-  /** Вложение отчёта Word (.docx), если сформировано. */
-  reportDocxBuffer?: Buffer | null;
+  /** Вложение отчёта PDF, если сформировано. */
+  reportPdfBuffer?: Buffer | null;
 };
 
 /**
@@ -230,7 +230,7 @@ export async function sendScreeningReportEmail(
     ${conclusionBlock}
     <h2>Рекомендации по найму</h2>
     ${hiringBlock}
-    <p><em>Полный отчёт с таблицами и графиками прилагается в формате Word (.docx), если вложение сформировано.</em></p>
+    <p><em>Полный отчёт с таблицами и графиками прилагается в формате PDF, если вложение сформировано.</em></p>
   `;
 
   const textLines = [
@@ -250,13 +250,12 @@ export async function sendScreeningReportEmail(
 
   const sendStarted = Date.now();
   const attachments =
-    payload.reportDocxBuffer && payload.reportDocxBuffer.length > 0
+    payload.reportPdfBuffer && payload.reportPdfBuffer.length > 0
       ? [
           {
-            filename: `screening-report-${payload.sessionId}.docx`,
-            content: payload.reportDocxBuffer,
-            contentType:
-              "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            filename: `screening-report-${payload.sessionId}.pdf`,
+            content: payload.reportPdfBuffer,
+            contentType: "application/pdf",
           },
         ]
       : undefined;

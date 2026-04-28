@@ -19,7 +19,7 @@ import { shortSessionRef } from "@/lib/logging/screeningSessionRef";
 import { prisma } from "@/lib/prisma";
 import { isFullScreeningPayloadComplete } from "@/lib/validation/stepCompletion";
 import { submitApiBodySchema } from "@/lib/validation/submitPayloadSchema";
-import { generateScreeningDocxBuffer } from "@/lib/report/generateScreeningDocx";
+import { generateScreeningPdfBuffer } from "@/lib/report/generateScreeningPdf";
 import type { Step1Data } from "@/store/useFormStore";
 import { Prisma } from "@/generated/prisma/client";
 
@@ -168,10 +168,10 @@ export async function POST(
     hiringRecommendations = null;
   }
 
-  let reportDocxBuffer: Buffer | null = null;
-  const docxStarted = Date.now();
+  let reportPdfBuffer: Buffer | null = null;
+  const pdfStarted = Date.now();
   try {
-    reportDocxBuffer = await generateScreeningDocxBuffer({
+    reportPdfBuffer = await generateScreeningPdfBuffer({
       profileName: payload.profileName,
       sessionId: payload.sessionId,
       rawScore,
@@ -186,18 +186,18 @@ export async function POST(
       conclusionText,
       hiringRecommendations,
     });
-    screeningServerLog("submit", "docx_ok", {
+    screeningServerLog("submit", "pdf_ok", {
       sessionRef,
-      bytes: reportDocxBuffer.length,
-      durationMs: Date.now() - docxStarted,
+      bytes: reportPdfBuffer.length,
+      durationMs: Date.now() - pdfStarted,
     });
   } catch (err) {
-    screeningServerLog("submit", "docx_failed", {
+    screeningServerLog("submit", "pdf_failed", {
       sessionRef,
-      durationMs: Date.now() - docxStarted,
+      durationMs: Date.now() - pdfStarted,
       errorName: err instanceof Error ? err.name : "unknown",
     });
-    reportDocxBuffer = null;
+    reportPdfBuffer = null;
   }
 
   const emailStarted = Date.now();
@@ -213,7 +213,7 @@ export async function POST(
       kotIpNormNote,
       conclusionText,
       hiringRecommendations,
-      reportDocxBuffer,
+      reportPdfBuffer,
       sessionRef,
     });
     screeningServerLog("submit", "email_finished", {
@@ -234,7 +234,7 @@ export async function POST(
   }
 
   const kotReport: KotReportJson = {
-    version: 3,
+    version: 4,
     rawScore,
     maxScore,
     kotIp: rawScore,
@@ -244,7 +244,7 @@ export async function POST(
     hiringRecommendations,
     conclusionGeneratedAt,
     emailSent,
-    docxAttached: reportDocxBuffer !== null,
+    pdfAttached: reportPdfBuffer !== null,
   };
 
   const dbStarted = Date.now();
