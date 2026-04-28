@@ -65,29 +65,62 @@ const STEP3_TEXTS: { id: keyof Step3Data; title: string }[] = [
   { id: "q10", title: "Я избегаю конфликтов и умею их разруливать." },
 ];
 
+/** Относительные пути к каталогу с Noto от «корня» проекта (web/). */
+const FONT_DIR_SUFFIXES: string[][] = [
+  ["public", "report-fonts"],
+  ["web", "public", "report-fonts"],
+  ["report-fonts"],
+  ["src", "assets", "report-fonts"],
+  ["web", "src", "assets", "report-fonts"],
+];
+
 /**
- * Порядок важен: `public/report-fonts` в деплое Next (Nixpacks/Docker).
- * Далее — ./report-fonts из Dockerfile, затем src/assets и варианты с префиксом web/.
+ * Railway / Nixpacks иногда дают `cwd` не там, где лежит `public/`.
+ * Обходим предков `cwd` и пробуем суффиксы; опционально `REPORT_FONTS_DIR`.
  */
+function collectReportFontSearchDirs(): string[] {
+  const bases: string[] = [];
+  let cur = process.cwd();
+  for (let i = 0; i < 16; i += 1) {
+    bases.push(cur);
+    const parent = path.dirname(cur);
+    if (parent === cur) {
+      break;
+    }
+    cur = parent;
+  }
+  const out: string[] = [];
+  for (const base of bases) {
+    for (const suffix of FONT_DIR_SUFFIXES) {
+      out.push(path.resolve(path.join(base, ...suffix)));
+    }
+  }
+  return [...new Set(out)];
+}
+
 function resolveReportFontsDir(): string {
-  const cwd = process.cwd();
-  const candidates = [
-    path.join(cwd, "public", "report-fonts"),
-    path.join(cwd, "web", "public", "report-fonts"),
-    path.join(cwd, "report-fonts"),
-    path.join(cwd, "src", "assets", "report-fonts"),
-    path.join(cwd, "web", "src", "assets", "report-fonts"),
-    path.join(cwd, "..", "public", "report-fonts"),
-    path.join(cwd, "..", "web", "public", "report-fonts"),
-    path.join(cwd, "..", "src", "assets", "report-fonts"),
-    path.join(cwd, "..", "web", "src", "assets", "report-fonts"),
-  ];
-  for (const dir of candidates) {
-    if (existsSync(path.join(dir, "NotoSans-Regular.ttf"))) {
+  const env = process.env.REPORT_FONTS_DIR?.trim();
+  if (env) {
+    const dir = path.resolve(env);
+    const reg = path.join(dir, "NotoSans-Regular.ttf");
+    const bold = path.join(dir, "NotoSans-Bold.ttf");
+    if (existsSync(reg) && existsSync(bold)) {
       return dir;
     }
   }
-  return candidates[0];
+  for (const dir of collectReportFontSearchDirs()) {
+    const reg = path.join(dir, "NotoSans-Regular.ttf");
+    const bold = path.join(dir, "NotoSans-Bold.ttf");
+    if (existsSync(reg) && existsSync(bold)) {
+      return dir;
+    }
+  }
+  const tried = collectReportFontSearchDirs()
+    .slice(0, 10)
+    .join(" | ");
+  throw new Error(
+    `PDF: нет NotoSans-Regular/Bold.ttf (cwd=${process.cwd()}). Проверены каталоги: ${tried}`
+  );
 }
 
 async function embedCyrillicFont(doc: PDFDocument, fontBytes: Uint8Array): Promise<PDFFont> {
@@ -574,11 +607,6 @@ export async function generateScreeningPdfBuffer(input: ScreeningPdfInput): Prom
   const fontsDir = resolveReportFontsDir();
   const regularFile = path.join(fontsDir, "NotoSans-Regular.ttf");
   const boldFile = path.join(fontsDir, "NotoSans-Bold.ttf");
-  if (!existsSync(regularFile) || !existsSync(boldFile)) {
-    throw new Error(
-      `PDF: нет файлов шрифтов в ${fontsDir} (cwd=${process.cwd()})`
-    );
-  }
 
   const doc = await PDFDocument.create();
   const fontBytes = readFileSync(regularFile);
