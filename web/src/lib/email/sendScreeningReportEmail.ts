@@ -189,6 +189,10 @@ export async function sendScreeningReportEmail(
     buildTransportOptions(host, port, secure, auth)
   );
 
+  const pdfBytes =
+    payload.reportPdfBuffer && payload.reportPdfBuffer.length > 0
+      ? payload.reportPdfBuffer.length
+      : 0;
   screeningServerLog("email", "send_start", {
     sessionRef: payload.sessionRef,
     recipientCount: recipients.length,
@@ -196,6 +200,7 @@ export async function sendScreeningReportEmail(
     secure,
     hostSuffix: host.includes(".") ? host.split(".").slice(-2).join(".") : host,
     replyToSet: Boolean(replyTo),
+    pdfAttachmentBytes: pdfBytes,
   });
 
   const safeName = escapeHtmlForPdf(payload.profileName);

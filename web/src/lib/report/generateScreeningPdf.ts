@@ -66,8 +66,8 @@ const STEP3_TEXTS: { id: keyof Step3Data; title: string }[] = [
 ];
 
 /**
- * Порядок важен: `public/report-fonts` всегда в деплое Next (и Nixpacks, и Docker).
- * Далее — ./report-fonts из Dockerfile, затем src/assets.
+ * Порядок важен: `public/report-fonts` в деплое Next (Nixpacks/Docker).
+ * Далее — ./report-fonts из Dockerfile, затем src/assets и варианты с префиксом web/.
  */
 function resolveReportFontsDir(): string {
   const cwd = process.cwd();
@@ -88,6 +88,19 @@ function resolveReportFontsDir(): string {
     }
   }
   return candidates[0];
+}
+
+async function embedCyrillicFont(doc: PDFDocument, fontBytes: Uint8Array): Promise<PDFFont> {
+  try {
+    return await doc.embedFont(fontBytes, { subset: false });
+  } catch (first) {
+    try {
+      return await doc.embedFont(fontBytes, { subset: true });
+    } catch {
+      const m = first instanceof Error ? first.message : String(first);
+      throw new Error(`PDF: embedFont (subset false/true) — ${m}`);
+    }
+  }
 }
 
 function likertLabel(a: LikertAnswer): string {
@@ -570,20 +583,8 @@ export async function generateScreeningPdfBuffer(input: ScreeningPdfInput): Prom
   const doc = await PDFDocument.create();
   const fontBytes = readFileSync(regularFile);
   const fontBoldBytes = readFileSync(boldFile);
-  let font: PDFFont;
-  let fontBold: PDFFont;
-  try {
-    font = await doc.embedFont(fontBytes, { subset: false });
-    fontBold = await doc.embedFont(fontBoldBytes, { subset: false });
-  } catch (first) {
-    try {
-      font = await doc.embedFont(fontBytes, { subset: true });
-      fontBold = await doc.embedFont(fontBoldBytes, { subset: true });
-    } catch {
-      const m = first instanceof Error ? first.message : String(first);
-      throw new Error(`PDF: embedFont (subset false/true) — ${m}`);
-    }
-  }
+  const font = await embedCyrillicFont(doc, fontBytes);
+  const fontBold = await embedCyrillicFont(doc, fontBoldBytes);
 
   const w = new PdfWriter(doc, font, fontBold);
   w.addPage(false);
